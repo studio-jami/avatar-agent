@@ -10,14 +10,15 @@ This repo uses `../oss/.env` as the local upstream credential source for shared 
 The local `avatar/.env` has been updated from `../oss/.env` where matching account credentials exist.
 
 - ElevenLabs: configured locally for the current agent and credit lane.
+- Anam: `ANAM_API_KEY` and `ANAM_AVATAR_ID` are populated locally and in deployment, but the current key value is rejected by Anam auth.
 - PostHog: configured locally from the shared Jami Studio account source.
 - Amplitude: configured locally from the shared Jami Studio account source.
 - Datadog/OTLP: local exporter endpoint and headers were derived from the shared Datadog account fields.
+- Vercel: `PUBLIC_APP_URL` is configured for `https://avatar.jami.studio`.
 
 ## Still Pending
 
-- `ANAM_API_KEY`: required before a live avatar session can mint Anam session tokens.
-- `PUBLIC_APP_URL`: set when a deployment URL exists.
+- Replace the current `ANAM_API_KEY` value with an Anam API key accepted by `https://api.anam.ai/v1/auth/session-token`.
 - `SENTRY_DSN`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`: set if this repo receives its own Sentry project lane.
 - Google Vertex / Gemini provider keys: intentionally deferred until the `jamie@yrka.io` Vertex lane is set up.
 - OpenAI, Anthropic, and xAI keys: optional future provider lanes, not required for the accepted Anam plus ElevenLabs surface.
@@ -46,7 +47,7 @@ Accepted upstream aliases:
 ## Account Setup Order
 
 1. Keep using the current ElevenLabs account and agent credits.
-2. Add the missing Anam API key to `avatar/.env` or deployment secrets.
+2. Replace the rejected Anam key with a valid Anam API key in `avatar/.env` and deployment secrets.
 3. Run the local provider smoke test through the avatar console.
 4. Configure deployment secrets with the same app-local names.
 5. Add Google Vertex later as a separate provider lane for `jamie@yrka.io`.

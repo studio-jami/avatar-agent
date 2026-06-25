@@ -30,6 +30,18 @@ Action:
 3. Restart the dev server or redeploy so the server process reads the new environment.
 4. Retry the session start.
 
+## Invalid Anam Key
+
+Symptom: `/api/runtime` reports `hasAnamApiKey: true`, but `/api/anam-session` returns an Anam auth error such as `Invalid API key`.
+
+Action:
+
+1. Treat this as an account credential issue, not an app wiring issue.
+2. Generate or copy a real Anam API key from the owning Anam account.
+3. Replace `ANAM_API_KEY` in local `.env` and deployment secrets.
+4. Redeploy or restart the server process.
+5. Re-run the live session broker smoke test.
+
 ## ElevenLabs Signed URL Failure
 
 Symptom: `/api/anam-session` reports an ElevenLabs signed URL failure.
@@ -49,13 +61,25 @@ Action:
 4. Confirm the server logs `[avatar-agent.telemetry]`.
 5. Check the configured analytics workspace for events named `avatar.*`.
 
+## Live Deployment Smoke Test
+
+Current production domain: `https://avatar.jami.studio`.
+
+1. Open `https://avatar.jami.studio` and confirm the page title is `Avatar Agent`.
+2. Request `https://avatar.jami.studio/api/runtime` and confirm readiness flags only are returned.
+3. Post a safe event to `https://avatar.jami.studio/api/telemetry` and confirm `{ "ok": true }`.
+4. Post `{}` to `https://avatar.jami.studio/api/anam-session`.
+5. Treat a returned `sessionToken` as success and do not log it.
+6. If the session call returns Anam `Invalid API key`, replace the Anam credential before changing app code.
+
 ## Deployment Secret Setup
 
 1. Add the same app-local variable names from `.env.example` to the deployment provider.
 2. Do not add `../oss/.env` wholesale to deployment.
 3. Keep Google Vertex variables empty until the `jamie@yrka.io` lane is ready.
-4. Build with `pnpm build`.
-5. Run the runtime endpoint and confirm it returns readiness flags only, never secret values.
+4. Set `PUBLIC_APP_URL=https://avatar.jami.studio` for production.
+5. Build with `pnpm build`.
+6. Run the runtime endpoint and confirm it returns readiness flags only, never secret values.
 
 ## Key Rotation
 

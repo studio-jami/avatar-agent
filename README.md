@@ -36,3 +36,7 @@ portable across providers and products.
 The initial feasibility recommendation is accepted: build the complete greenfield Anam SDK +
 server-side ElevenLabs working surface, with provider keys kept server-side, telemetry wired by
 configuration, and the access layer held behind clear boundaries for later full-account workflows.
+
+The Vercel deployment is live at `https://avatar.jami.studio`. Runtime readiness currently confirms
+ElevenLabs, Anam env presence, PostHog, Amplitude, and OTLP exporter configuration. The live session
+broker still needs a valid Anam API key; the current value is present but rejected by Anam auth.
