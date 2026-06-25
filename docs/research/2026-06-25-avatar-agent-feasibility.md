@@ -1,18 +1,18 @@
 # Avatar Agent Feasibility Report
 
 Date: 2026-06-25
-Status: Draft for decision
+Status: Accepted direction
 Request: Set up the public Avatar Agent repository, audit existing research and current provider opportunities, and recommend a simple upstream-first implementation direction.
 Source scope: Local README brainstorm, shared Jami Studio standards, master research reports, provider/account docs, and official provider docs available during setup.
 Owner: Jami Studio
 
 ## Executive Summary
 
-The project is feasible, and the lowest-churn path is to start with an Anam-powered embed/SDK surface connected to an ElevenLabs Conversational AI agent through Anam's server-side ElevenLabs integration. That path gives a working real-time avatar quickly, keeps API keys server-side, avoids browser audio bridging, and matches the current credit/opportunity posture.
+The project is feasible, and the accepted path is a complete greenfield Anam SDK surface connected to an ElevenLabs Conversational AI agent through Anam's server-side ElevenLabs integration. That path gives a working real-time avatar, keeps API keys server-side, avoids browser audio bridging, and matches the current credit/opportunity posture.
 
-The durable architecture should still follow the upstream Jami Studio research: the avatar is a thin interaction layer; tool execution and broad account access belong behind an access stream; realtime transport, realtime model, voice/TTS, observability, and product analytics stay behind provider seams. OpenTelemetry should be the emit standard, with Sentry/PostHog/Amplitude as configured consumers rather than product-owned dependencies.
+The durable architecture should still follow the Jami Studio research: the avatar is an interaction layer; tool execution and broad account access belong behind an access stream; realtime transport, realtime model, voice/TTS, observability, and product analytics stay behind provider seams. OpenTelemetry should be the emit standard, with Sentry/PostHog/Amplitude as configured consumers rather than product-owned dependencies.
 
-Do not build LiveKit, Pipecat, MCP, A2A, or a full SDK scaffold before the first working avatar surface needs them. Record their boundaries now, then add them when a consuming implementation stream exists.
+Do not build unrelated LiveKit, Pipecat, MCP, A2A, or hosted SDK surfaces before the accepted Anam + ElevenLabs working surface is complete end to end. Record their boundaries now, then add them when a consuming implementation stream exists.
 
 ## Question Being Answered
 
@@ -23,7 +23,7 @@ What is the simplest public-repo foundation and first implementation shape for a
 Checked local sources:
 
 - `README.md`, moved to `docs/research/brainstorms/initial-avatar-agent-brainstorm.md`.
-- `../oss/_ops/planning/standards/` for dev-docs, planning, report, and source-truth standards.
+- `docs/standards/` for dev-docs, planning, report, and source-truth standards.
 - `../oss/_ops/planning/research/masters/audits/13-realtime-voice/recommendation.md`.
 - `../oss/_ops/planning/research/masters/reports/C-capability-adapters/F11-provider-inference-and-realtime.md`.
 - `../oss/_ops/planning/research/masters/reports/B-agent-substrate/F08-transport-and-interop.md`.
@@ -47,9 +47,9 @@ No live provider credentials were used, and no provider integration was executed
 
 ## Current Project State
 
-The repo contained a brainstorm README and curated image assets under `avatars/`. There is no application code, package manifest, deployment target, provider integration, docs system, or release automation yet.
+The repo contained a brainstorm README and curated image assets, now organized under `assets/avatars/`. There is no deployed application yet.
 
-This setup adds a public README, `AGENTS.md`, docs hierarchy, `.env.example`, observability notes, and `.changes/` fragments without adding build gates or implementation scaffolding before a stack is chosen.
+The accepted setup adds a public README, `AGENTS.md`, docs hierarchy, local standards, `.env.example`, observability notes, and `.changes/` fragments, then proceeds into the complete Anam + ElevenLabs application surface.
 
 ## Official / External Findings
 
@@ -69,7 +69,7 @@ OpenTelemetry is vendor-agnostic instrumentation for traces, metrics, and logs. 
 
 ## Industry Standard Shape
 
-The industry-standard shape is a thin realtime interaction layer over a server-owned session broker:
+The industry-standard shape is a realtime interaction layer over a server-owned session broker:
 
 - Client renders avatar media and UX state.
 - Server mints short-lived provider sessions and keeps provider keys private.
@@ -90,7 +90,7 @@ Reversibility: high if wrapped as one provider surface.
 
 ### Option B: Anam SDK Plus Server-Side ElevenLabs Agent
 
-Build a small web surface using Anam JS SDK and a server endpoint that mints Anam sessions from ElevenLabs signed URLs.
+Build a complete web surface using Anam JS SDK and a server endpoint that mints Anam sessions from ElevenLabs signed URLs.
 
 Fits the brainstorm best: custom UI, transcript handling, server-side keys, lower audio-bridging complexity, and immediate use of ElevenLabs credits.
 Tradeoffs: more code than Player/Widget, but still much less than self-hosted realtime infrastructure. Browser client tools are not supported by Anam's server-side ElevenLabs path, so tool access should run server-side through ElevenLabs webhooks or the access stream.
@@ -137,9 +137,9 @@ Deployment: a subdomain such as `avatar.jami.studio` is operationally cleaner th
 
 ## Project Implications
 
-Implementation should start with a single working avatar surface, not a full SDK, CLI, MCP server, or release pipeline. The repo setup should stay thin: public README, docs, env names, changelog fragments, and observability direction. Public assets must remain curated.
+Implementation should deliver the accepted avatar surface end to end: app shell, session broker, avatar player, transcript/status lifecycle, provider error handling, environment validation, telemetry hooks, docs, changelog, and verification. A public SDK, CLI, MCP server, or release pipeline should wait until this working surface needs them. Public assets must remain curated.
 
-The changelog system should remain fragment-based until real releases need automation. The first implementation stream should produce a small session broker and a UI that can connect, render the avatar, show basic status/transcript, stop cleanly, and emit telemetry when configured.
+The changelog system should remain fragment-based until real releases need automation. The implementation stream should produce the complete accepted working surface in one coherent pass: session broker, UI, connection lifecycle, transcript/status handling, stop/retry behavior, error states, telemetry hooks, documentation, and validation.
 
 ## Risks And Constraints
 
@@ -152,7 +152,7 @@ The changelog system should remain fragment-based until real releases need autom
 
 ## Recommended Direction
 
-Choose Option B first: Anam SDK plus server-side ElevenLabs agent session broker. It best matches the brainstorm, uses existing credits, keeps keys server-side, gives enough UI control to build the real interaction layer, and remains small enough to avoid premature platform weight.
+Choose Option B: Anam SDK plus server-side ElevenLabs agent session broker. It best matches the brainstorm, uses existing credits, keeps keys server-side, gives enough UI control to build the real interaction layer, and avoids unrelated platform weight.
 
 Keep Option A available as an even faster fallback if the SDK path hits account or domain friction. Keep Option C as the accepted architecture track once the first working surface proves the workflow. Treat Option D as research only until a provider cost or quality constraint forces it.
 
@@ -174,7 +174,7 @@ Tradeoffs:
 
 Recommendation: Option B.
 
-Why: It is the smallest path that still exercises the actual SDK and interaction-layer shape.
+Why: It is the direct path to the accepted working surface while still exercising the actual SDK and interaction-layer shape.
 
 Implication if different: Option A narrows early UX control; Option C requires infra and adapter work before the avatar workflow is proven.
 
@@ -245,14 +245,14 @@ Implication if different: A path route may be fine later but creates more coupli
 - Observability: emit standard telemetry first, then export to Sentry/PostHog/Amplitude by config?
 - Deployment: use `avatar.jami.studio` for the internal development surface?
 
-## Next Step If Accepted
+## Next Step
 
-Write a focused implementation plan for the first provider spike: server session broker, avatar UI, transcript/status handling, env validation, minimal telemetry, and deployment target. Then implement the smallest working surface against live Anam/ElevenLabs credentials.
+Implement the complete accepted working surface: Next.js app shell, server-side Anam + ElevenLabs session broker, avatar UI, transcript/status handling, env validation, telemetry hooks, documentation, changelog, build validation, and deployment-ready configuration.
 
 ## Sources
 
 - `README.md` original brainstorm, preserved at `docs/research/brainstorms/initial-avatar-agent-brainstorm.md`.
-- `../oss/_ops/planning/standards/`.
+- `docs/standards/`.
 - `../oss/_ops/planning/research/masters/audits/13-realtime-voice/recommendation.md`.
 - `../oss/_ops/planning/research/masters/reports/C-capability-adapters/F11-provider-inference-and-realtime.md`.
 - `../oss/_ops/planning/research/masters/reports/B-agent-substrate/F08-transport-and-interop.md`.

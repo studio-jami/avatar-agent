@@ -8,6 +8,7 @@ build/
 .next/
 out/
 coverage/
+*.tsbuildinfo
 
 # Local environment and secrets
 .env

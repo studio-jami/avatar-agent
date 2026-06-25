@@ -8,10 +8,10 @@ Keep the repo simple, modular, public-safe, and provider-adaptable.
 1. Live code, configuration, and generated artifacts once they exist.
 2. Durable repo docs under `docs/architecture/`, `docs/operations/`, and `docs/decisions/`.
 3. Feasibility reports and brainstorms under `docs/research/`.
-4. Shared Jami Studio standards in `../oss/_ops/planning/standards/`.
+4. Local repo standards in `docs/standards/`.
 
 Never treat a brainstorm or feasibility report as implemented behavior unless the code proves it.
-Follow the upstream standards by reference; do not fork local copies into this repo.
+Follow `docs/standards/` for repo docs, reports, plans, and source-of-truth handling.
 
 ## Repo Rules
 
@@ -21,11 +21,13 @@ Follow the upstream standards by reference; do not fork local copies into this r
 - Keep provider choices swappable by configuration. Do not hardcode one avatar, voice, realtime model, analytics vendor, or deployment target as the permanent default.
 - Keep secrets out of tracked files. `.env.example` lists names only; real values live in local `.env` or the host secret store.
 - Do not commit staging media, private avatars, screenshots with sensitive data, logs, traces, transcripts, or generated residue.
+- `assets/avatars/` contains only curated public avatar assets.
+- This is greenfield work: implement complete working surfaces end to end, with docs, operations, changelog, and verification in parity. Do not leave deliberately partial surfaces that create drift.
 - Do not add self-blocking gates, bespoke compliance scripts, or restrictive abstractions before the product surface needs them.
 
 ## Docs And Changelog
 
-- Follow the shared dev-docs, planning, report, and source-truth standards from `../oss/_ops/planning/standards/`.
+- Follow the shared dev-docs, planning, report, and source-truth standards from `docs/standards/`.
 - Research and feasibility reports live in `docs/research/`.
 - Durable decisions live in `docs/decisions/` after acceptance.
 - Add a `.changes/` fragment for production-meaningful docs, code, CI, security, operations, package, or public behavior changes.
@@ -33,7 +35,7 @@ Follow the upstream standards by reference; do not fork local copies into this r
 
 ## Verification
 
-- Use the narrowest meaningful validation for what changed.
+- Validate the complete working surface affected by the change, including docs and runtime behavior when code exists.
 - When code exists, add project-local commands here instead of relying on global assumptions.
 - For docs-only work, validate Markdown diagnostics and review the changed files.
 - Before closeout, confirm no secrets or private assets are staged.

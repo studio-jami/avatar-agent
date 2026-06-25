@@ -13,9 +13,9 @@ accounts, subagents, and long-running work.
 
 ## Initial Provider Shape
 
-The near-term path is Anam embed or SDK plus ElevenLabs Conversational AI, with server-side
-session token minting so provider keys stay off the client. The fuller architecture keeps
-realtime media transport and realtime model selection as separate seams so LiveKit/Pipecat,
+The accepted greenfield path is a complete Anam SDK surface plus ElevenLabs Conversational AI,
+with server-side session token minting so provider keys stay off the client. The architecture
+keeps realtime media transport and realtime model selection as separate seams so LiveKit/Pipecat,
 Anam, or future providers can be evaluated without rewriting the product surface.
 
 ## Non-Goals

@@ -3,7 +3,7 @@
 Copy `.env.example` to `.env` for local development. Keep real values in `.env` or the
 host secret store only.
 
-## Required For First Provider Spike
+## Required For Accepted Provider Surface
 
 - `ANAM_API_KEY`
 - `ANAM_AVATAR_ID`

@@ -1,0 +1,12 @@
+{
+  "name": "avatar-agent",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.13.1",
+  "scripts": {
+    "dev": "pnpm --filter @studio-jami/avatar-agent-web dev",
+    "build": "pnpm --filter @studio-jami/avatar-agent-web build",
+    "typecheck": "pnpm --filter @studio-jami/avatar-agent-web typecheck",
+    "verify": "pnpm typecheck && pnpm build"
+  }
+}

@@ -16,8 +16,9 @@ portable across providers and products.
 - `docs/operations/` - runtime setup, environment, observability, and deployment notes.
 - `docs/research/` - brainstorms, feasibility reports, and source research.
 - `docs/decisions/` - durable decision records once choices are accepted.
+- `docs/standards/` - local Jami Studio standards for this repo.
 - `.changes/` - changelog fragments for production-meaningful changes.
-- `avatars/` - curated public avatar assets only. Do not commit staging media or private assets.
+- `assets/avatars/` - curated public avatar assets only. Do not commit staging media or private assets.
 
 ## Operating Principles
 
@@ -32,6 +33,6 @@ portable across providers and products.
 
 ## Current Status
 
-This repository is in foundation setup. The first durable research output is the feasibility
-report under `docs/research/`. Implementation should begin after the provider, access-layer,
-and deployment decisions in that report are accepted.
+The initial feasibility recommendation is accepted: build the complete greenfield Anam SDK +
+server-side ElevenLabs working surface, with provider keys kept server-side, telemetry wired by
+configuration, and the access layer held behind clear boundaries for later full-account workflows.
