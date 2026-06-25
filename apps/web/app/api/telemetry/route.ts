@@ -10,6 +10,6 @@ export async function POST(request: Request) {
       )
     : {};
 
-  recordServerEvent(name, attributes);
+  await recordServerEvent(name, attributes);
   return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
 }

@@ -15,6 +15,11 @@ without changing call sites.
 - Amplitude: product analytics and experiment/engagement analysis where it has better workflow fit.
 - OpenTelemetry: the emit seam and collector/exporter standard. Prefer this over vendor-specific calls in shared product code.
 
+The current working surface records lifecycle events through `/api/telemetry`. The server keeps a
+structured local log and forwards safe events to PostHog and Amplitude when their environment
+variables are configured. Datadog/OTLP settings are present as exporter configuration for the
+runtime lane, not as product-specific calls.
+
 ## Event Families To Capture Later
 
 - Avatar session lifecycle: requested, started, connected, interrupted, stopped, failed.
@@ -28,3 +33,5 @@ without changing call sites.
 Use `.env.example` for variable names only. Real values belong in local `.env`, deployment secrets,
 or the upstream operator secret store. Never commit provider keys, transcripts containing private
 data, raw traces, recordings, screenshots, or session logs.
+
+Runbook: `runbooks.md#telemetry-check`.

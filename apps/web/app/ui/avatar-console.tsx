@@ -13,6 +13,7 @@ type RuntimeConfig = {
   hasSentryDsn: boolean;
   hasPostHogKey: boolean;
   hasAmplitudeKey: boolean;
+  hasOtelExporter: boolean;
   serviceName: string;
 };
 
@@ -206,6 +207,7 @@ export function AvatarConsole() {
           <span>{runtime?.serviceName ?? "avatar-agent"}</span>
           <span>{runtime?.hasSentryDsn ? "sentry configured" : "sentry optional"}</span>
           <span>{runtime?.hasPostHogKey || runtime?.hasAmplitudeKey ? "analytics configured" : "analytics optional"}</span>
+          <span>{runtime?.hasOtelExporter ? "otel exporter configured" : "otel exporter optional"}</span>
         </div>
 
         <div className="video-frame">

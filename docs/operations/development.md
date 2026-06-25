@@ -26,7 +26,11 @@ The accepted working surface lives in `apps/web/`.
 
 1. Copy `.env.example` to `.env`.
 2. Fill `ANAM_API_KEY`, `ANAM_AVATAR_ID`, `ELEVENLABS_API_KEY`, and `ELEVENLABS_AGENT_ID`.
+   Shared Jami Studio analytics and OTLP values can be projected from `../oss/.env`; see
+   `account-configuration.md`.
 3. Run `pnpm install`.
 4. Run `pnpm dev` and open `http://localhost:3638`.
 
 Provider keys stay server-side. The client receives only the short-lived Anam session token and non-secret provider trace metadata.
+
+Runbooks live in `runbooks.md`. The operator-facing console guide lives in `../user-manual/avatar-console.md`.

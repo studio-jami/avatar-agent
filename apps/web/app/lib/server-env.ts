@@ -13,7 +13,15 @@ type PublicRuntimeConfig = {
   hasSentryDsn: boolean;
   hasPostHogKey: boolean;
   hasAmplitudeKey: boolean;
+  hasOtelExporter: boolean;
   serviceName: string;
+};
+
+type TelemetryConfig = {
+  serviceName: string;
+  postHogApiKey?: string;
+  postHogHost?: string;
+  amplitudeApiKey?: string;
 };
 
 function readEnv(name: string): string | undefined {
@@ -21,9 +29,20 @@ function readEnv(name: string): string | undefined {
   return value ? value : undefined;
 }
 
+function readFirstEnv(names: string[]): string | undefined {
+  for (const name of names) {
+    const value = readEnv(name);
+    if (value) {
+      return value;
+    }
+  }
+
+  return undefined;
+}
+
 export function getProviderConfig(): ProviderConfig {
   const anamApiKey = readEnv("ANAM_API_KEY");
-  const elevenLabsApiKey = readEnv("ELEVENLABS_API_KEY");
+  const elevenLabsApiKey = readFirstEnv(["ELEVENLABS_API_KEY", "ELEVEN_LABS_API_KEY"]);
 
   if (!anamApiKey || !elevenLabsApiKey) {
     const missing = [
@@ -49,8 +68,18 @@ export function getPublicRuntimeConfig(): PublicRuntimeConfig {
     hasDefaultAvatarId: Boolean(readEnv("ANAM_AVATAR_ID")),
     hasDefaultAgentId: Boolean(readEnv("ELEVENLABS_AGENT_ID")),
     hasSentryDsn: Boolean(readEnv("SENTRY_DSN")),
-    hasPostHogKey: Boolean(readEnv("POSTHOG_API_KEY")),
+    hasPostHogKey: Boolean(readFirstEnv(["POSTHOG_API_KEY", "POSTHOG_KEY"])),
     hasAmplitudeKey: Boolean(readEnv("AMPLITUDE_API_KEY")),
+    hasOtelExporter: Boolean(readEnv("OTEL_EXPORTER_OTLP_ENDPOINT")),
     serviceName: readEnv("OTEL_SERVICE_NAME") ?? "avatar-agent",
+  };
+}
+
+export function getTelemetryConfig(): TelemetryConfig {
+  return {
+    serviceName: readEnv("OTEL_SERVICE_NAME") ?? "avatar-agent",
+    postHogApiKey: readFirstEnv(["POSTHOG_API_KEY", "POSTHOG_KEY"]),
+    postHogHost: readEnv("POSTHOG_HOST"),
+    amplitudeApiKey: readEnv("AMPLITUDE_API_KEY"),
   };
 }

@@ -11,5 +11,6 @@ dated reports or brainstorms.
 - `research/` - brainstorms, feasibility reports, source audits, and external research.
 - `roadmaps/` - implementation plans for complete working surfaces.
 - `standards/` - repo-local standards for docs, reports, plans, and source truth.
+- `user-manual/` - operator-facing guides for the working product surface.
 
 The standards in `docs/standards/` are the operating reference for this repo.

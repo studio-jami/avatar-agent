@@ -18,6 +18,9 @@ with server-side session token minting so provider keys stay off the client. The
 keeps realtime media transport and realtime model selection as separate seams so LiveKit/Pipecat,
 Anam, or future providers can be evaluated without rewriting the product surface.
 
+See `account-and-provider-flow.md` for the credential boundary, provider flow, and upstream
+account alias policy.
+
 ## Non-Goals
 
 - The avatar layer does not directly own broad account credentials.

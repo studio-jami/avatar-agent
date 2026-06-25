@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
     const session = await createAvatarSession(body);
 
-    recordServerEvent("avatar.session_token.created", {
+    await recordServerEvent("avatar.session_token.created", {
       durationMs: Math.round(performance.now() - startedAt),
       hasElevenLabsRequestId: Boolean(session.providerTrace.elevenLabsRequestId),
       hasElevenLabsTraceId: Boolean(session.providerTrace.elevenLabsTraceId),
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to create avatar session";
 
-    recordServerEvent("avatar.session_token.failed", {
+    await recordServerEvent("avatar.session_token.failed", {
       durationMs: Math.round(performance.now() - startedAt),
       error: message,
     });
