@@ -1,0 +1,65 @@
+# Dependencies and package-manager state
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+coverage/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Logs and local scratch
+*.log
+logs/
+.cache/
+.turbo/
+tmp/
+temp/
+_worktrees/
+
+# OS/editor residue
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+!.vscode/extensions.json# Dependencies and package managers
+node_modules/
+.pnpm-store/
+.yarn/
+
+# Build outputs
+.next/
+dist/
+build/
+coverage/
+.out/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Logs and runtime residue
+*.log
+logs/
+trace-output/
+playwright-report/
+test-results/
+
+# Local editor and OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local scratch
+_worktrees/
+.tmp/
+tmp/
