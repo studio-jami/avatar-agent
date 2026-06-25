@@ -11,7 +11,7 @@ The production Vercel deployment is live at `https://avatar.jami.studio`.
 - Runtime endpoint: healthy and returns non-secret readiness flags.
 - Telemetry endpoint: healthy and accepts safe lifecycle events.
 - ElevenLabs signed URL account check: healthy.
-- Anam session token broker: blocked by Anam `Invalid API key` until the deployment secret is replaced with a valid Anam API key.
+- Anam session token broker: healthy and returns a session token through the server-side broker.
 
 ## Production Secrets
 
@@ -47,3 +47,11 @@ Deferred lanes:
 3. Check `/api/runtime` for readiness flags.
 4. Post a safe smoke event to `/api/telemetry`.
 5. Post to `/api/anam-session` and verify a session token is returned without logging the token.
+
+## Latest Production Smoke
+
+Completed after replacing the Vercel `ANAM_API_KEY` secret and redeploying production.
+
+- Runtime readiness: healthy.
+- Telemetry smoke event: accepted.
+- Session broker: returned session token, avatar ID, agent ID, and provider trace metadata.

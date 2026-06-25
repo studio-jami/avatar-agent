@@ -38,5 +38,5 @@ server-side ElevenLabs working surface, with provider keys kept server-side, tel
 configuration, and the access layer held behind clear boundaries for later full-account workflows.
 
 The Vercel deployment is live at `https://avatar.jami.studio`. Runtime readiness currently confirms
-ElevenLabs, Anam env presence, PostHog, Amplitude, and OTLP exporter configuration. The live session
-broker still needs a valid Anam API key; the current value is present but rejected by Anam auth.
+ElevenLabs, Anam, PostHog, Amplitude, and OTLP exporter configuration. The live session broker
+successfully mints Anam session tokens server-side without exposing provider keys to the client.

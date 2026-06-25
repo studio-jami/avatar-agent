@@ -64,3 +64,4 @@ desktop.ini
 _worktrees/
 .tmp/
 tmp/
+.vercel
