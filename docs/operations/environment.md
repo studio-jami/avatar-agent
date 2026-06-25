@@ -10,6 +10,11 @@ host secret store only.
 - `ELEVENLABS_API_KEY`
 - `ELEVENLABS_AGENT_ID`
 
+Named persona IDs can be configured with `AVATAR_PERSONA_KEYS` plus matching variables. For
+example, `AVATAR_PERSONA_KEYS=MEGAN,SARAH,ALEXIS` tells the server to read `MEGAN`, `SARAH`,
+and `ALEXIS` as Anam avatar/persona IDs and expose only friendly labels to the browser. The
+server reuses `ELEVENLABS_AGENT_ID` unless a persona-specific `<KEY>_ELEVENLABS_AGENT_ID` is set.
+
 The runtime also accepts upstream `ELEVEN_LABS_API_KEY` when projecting shared account values
 from `../oss/.env`, but deployment secrets should prefer the app-local `ELEVENLABS_API_KEY` name.
 

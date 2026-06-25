@@ -21,6 +21,7 @@ Required for live avatar sessions:
 
 - `ANAM_API_KEY`
 - `ANAM_AVATAR_ID`
+- `AVATAR_PERSONA_KEYS` and any named persona variables used by that list
 - `ELEVENLABS_API_KEY`
 - `ELEVENLABS_AGENT_ID`
 - `PUBLIC_APP_URL`
@@ -54,4 +55,4 @@ Completed after replacing the Vercel `ANAM_API_KEY` secret and redeploying produ
 
 - Runtime readiness: healthy.
 - Telemetry smoke event: accepted.
-- Session broker: returned session token, avatar ID, agent ID, and provider trace metadata.
+- Session broker: returned a session token and selected persona metadata without logging the token.

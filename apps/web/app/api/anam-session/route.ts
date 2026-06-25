@@ -21,9 +21,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         sessionToken: session.sessionToken,
-        avatarId: session.avatarId,
-        agentId: session.agentId,
-        providerTrace: session.providerTrace,
+        persona: session.persona,
       },
       {
         headers: {

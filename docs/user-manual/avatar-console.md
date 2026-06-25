@@ -8,24 +8,16 @@ The avatar console is the first working surface for running a live Avatar Agent 
 ## Start A Session
 
 1. Open the app.
-2. Confirm the provider readiness chips show the expected Anam and ElevenLabs configuration.
-3. Keep the default avatar and agent IDs, or enter another configured ID pair.
-4. Select Start Session.
-5. Allow microphone access when the browser asks.
-6. Watch the status, transcript, and provider trace panels during the session.
+2. Choose a persona.
+3. Select Start.
+4. Allow microphone access when the browser asks.
+5. Watch the conversation panel during the session.
 
 ## Stop A Session
 
-1. Select Stop Session.
+1. Select Stop.
 2. Wait for the status to return to idle.
 3. Start again only after the previous stream closes.
-
-## Readiness States
-
-- Anam missing: the server cannot mint an Anam session token yet.
-- ElevenLabs missing: the server cannot request a Conversational AI signed URL.
-- Analytics configured: lifecycle events can forward through the telemetry endpoint.
-- Provider trace present: the server received request or trace IDs from provider calls.
 
 ## Troubleshooting
 

@@ -1,20 +1,21 @@
-import { getProviderConfig } from "./server-env";
+import { getProviderConfig, getProviderPersona } from "./server-env";
 
 const ELEVENLABS_SIGNED_URL_ENDPOINT =
   "https://api.elevenlabs.io/v1/convai/conversation/get-signed-url";
 const ANAM_SESSION_TOKEN_ENDPOINT = "https://api.anam.ai/v1/auth/session-token";
 
 type SessionRequestInput = {
-  avatarId?: unknown;
-  agentId?: unknown;
+  personaId?: unknown;
   userId?: unknown;
   dynamicVariables?: unknown;
 };
 
 type AvatarSession = {
   sessionToken: string;
-  avatarId: string;
-  agentId: string;
+  persona: {
+    id: string;
+    label: string;
+  };
   providerTrace: {
     elevenLabsRequestId?: string;
     elevenLabsTraceId?: string;
@@ -46,20 +47,16 @@ async function readProviderError(response: Response): Promise<string> {
 
 export async function createAvatarSession(input: SessionRequestInput): Promise<AvatarSession> {
   const config = getProviderConfig();
-  const avatarId = asOptionalString(input.avatarId) ?? config.defaultAvatarId;
-  const agentId = asOptionalString(input.agentId) ?? config.defaultAgentId;
+  const persona = getProviderPersona(asOptionalString(input.personaId) ?? config.defaultPersonaId);
   const userId = asOptionalString(input.userId);
   const dynamicVariables = asRecord(input.dynamicVariables);
 
-  if (!avatarId || !agentId) {
-    const missing = [!avatarId ? "avatarId or ANAM_AVATAR_ID" : null, !agentId ? "agentId or ELEVENLABS_AGENT_ID" : null]
-      .filter(Boolean)
-      .join(", ");
-    throw new Error(`Missing session input: ${missing}`);
+  if (!persona) {
+    throw new Error("Missing session persona configuration");
   }
 
   const signedUrl = new URL(ELEVENLABS_SIGNED_URL_ENDPOINT);
-  signedUrl.searchParams.set("agent_id", agentId);
+  signedUrl.searchParams.set("agent_id", persona.agentId);
 
   const elevenLabsResponse = await fetch(signedUrl, {
     headers: {
@@ -81,7 +78,7 @@ export async function createAvatarSession(input: SessionRequestInput): Promise<A
 
   const elevenLabsAgentSettings: Record<string, unknown> = {
     signedUrl: elevenLabsPayload.signed_url,
-    agentId,
+    agentId: persona.agentId,
   };
 
   if (userId) {
@@ -99,7 +96,7 @@ export async function createAvatarSession(input: SessionRequestInput): Promise<A
       Authorization: `Bearer ${config.anamApiKey}`,
     },
     body: JSON.stringify({
-      personaConfig: { avatarId },
+      personaConfig: { avatarId: persona.avatarId },
       environment: {
         elevenLabsAgentSettings,
       },
@@ -118,8 +115,10 @@ export async function createAvatarSession(input: SessionRequestInput): Promise<A
 
   return {
     sessionToken: anamPayload.sessionToken,
-    avatarId,
-    agentId,
+    persona: {
+      id: persona.id,
+      label: persona.label,
+    },
     providerTrace: {
       elevenLabsRequestId: elevenLabsResponse.headers.get("request-id") ?? undefined,
       elevenLabsTraceId: elevenLabsResponse.headers.get("x-trace-id") ?? undefined,

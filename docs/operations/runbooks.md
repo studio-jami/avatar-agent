@@ -6,7 +6,7 @@ Status: Active
 ## Run Locally
 
 1. Confirm `avatar/.env` exists and contains the provider fields from `docs/operations/account-configuration.md`.
-2. Confirm `ANAM_API_KEY`, `ANAM_AVATAR_ID`, `ELEVENLABS_API_KEY`, and `ELEVENLABS_AGENT_ID` are populated.
+2. Confirm `ANAM_API_KEY`, `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`, and the named persona variables are populated.
 3. Run `pnpm install` from the repo root if dependencies are not installed.
 4. Run `pnpm dev`.
 5. Open `http://localhost:3638`.
@@ -26,7 +26,7 @@ Symptom: the console shows provider readiness is incomplete or `/api/anam-sessio
 Action:
 
 1. Add `ANAM_API_KEY` to local or deployment secrets.
-2. Confirm `ANAM_AVATAR_ID` is the intended public avatar ID.
+2. Confirm at least one configured persona ID is present.
 3. Restart the dev server or redeploy so the server process reads the new environment.
 4. Retry the session start.
 
