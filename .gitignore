@@ -65,3 +65,6 @@ _worktrees/
 .tmp/
 tmp/
 .vercel
+
+# Staging and deployment assets
+assets/*

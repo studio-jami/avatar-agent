@@ -1,8 +1,21 @@
+import { existsSync, readdirSync } from "node:fs";
+import { resolve } from "node:path";
+
 type ProviderConfig = {
   anamApiKey: string;
   elevenLabsApiKey: string;
   personas: ProviderPersona[];
   defaultPersonaId?: string;
+};
+
+export type BosonVideoSize = "640x640" | "640x480" | "480x640";
+
+type BosonConfig = {
+  apiKey: string;
+  avatars: BosonAvatarAsset[];
+  defaultAvatarId?: string;
+  ttsModel: string;
+  videoSize: BosonVideoSize;
 };
 
 type ProviderPersona = {
@@ -18,10 +31,25 @@ type PublicPersona = {
   label: string;
 };
 
+type BosonAvatarAsset = {
+  id: string;
+  label: string;
+  fileName: string;
+};
+
+type ProviderSupport = {
+  anam: boolean;
+  boson: boolean;
+};
+
 type PublicRuntimeConfig = {
   providerReady: boolean;
+  providerSupport: ProviderSupport;
+  defaultProvider: "anam" | "boson" | null;
   personas: PublicPersona[];
   defaultPersonaId?: string;
+  bosonAvatars: BosonAvatarAsset[];
+  defaultBosonAvatarId?: string;
 };
 
 type TelemetryConfig = {
@@ -61,6 +89,52 @@ function titleFromKey(value: string): string {
     .filter(Boolean)
     .map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1).toLowerCase()}`)
     .join(" ");
+}
+
+function titleFromFileName(value: string): string {
+  const withoutExt = value.replace(/\.[^/.]+$/, "");
+  return withoutExt
+    .split(/[_-]+/)
+    .filter(Boolean)
+    .map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1).toLowerCase()}`)
+    .join(" ");
+}
+
+function readBosonVideoSize(): BosonVideoSize {
+  const size = readEnv("BOSON_VIDEO_SIZE");
+  if (size === "640x640" || size === "640x480" || size === "480x640") {
+    return size;
+  }
+
+  return "640x640";
+}
+
+function liveAvatarDirectory(): string | undefined {
+  const candidates = [
+    resolve(process.cwd(), "../../assets/avatars/live"),
+    resolve(process.cwd(), "../assets/avatars/live"),
+    resolve(process.cwd(), "assets/avatars/live"),
+  ];
+
+  return candidates.find((candidate) => existsSync(candidate));
+}
+
+function readBosonAvatarAssets(): BosonAvatarAsset[] {
+  const directory = liveAvatarDirectory();
+  if (!directory) {
+    return [];
+  }
+
+  const mediaFiles = readdirSync(directory, { withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => entry.name)
+    .filter((name) => /\.(png|jpe?g|webp)$/i.test(name));
+
+  return mediaFiles.map((fileName) => ({
+    id: safeId(fileName.replace(/\.[^/.]+$/, "")),
+    label: titleFromFileName(fileName),
+    fileName,
+  }));
 }
 
 function uniquePersonas(personas: ProviderPersona[]): ProviderPersona[] {
@@ -194,13 +268,52 @@ export function getProviderConfig(): ProviderConfig {
   };
 }
 
-export function getPublicRuntimeConfig(): PublicRuntimeConfig {
-  const personas = getProviderPersonas();
+export function getBosonAvatarAssets(): BosonAvatarAsset[] {
+  return readBosonAvatarAssets();
+}
+
+export function getBosonConfig(): BosonConfig {
+  const apiKey = readEnv("BOSON_API_KEY");
+  const avatars = readBosonAvatarAssets();
+
+  if (!apiKey || avatars.length === 0) {
+    const missing = [
+      !apiKey ? "BOSON_API_KEY" : null,
+      avatars.length === 0 ? "assets/avatars/live image" : null,
+    ].filter(Boolean);
+
+    throw new Error(`Missing Boson provider environment: ${missing.join(", ")}`);
+  }
 
   return {
-    providerReady: Boolean(readEnv("ANAM_API_KEY") && readFirstEnv(["ELEVENLABS_API_KEY", "ELEVEN_LABS_API_KEY"]) && personas.length > 0),
+    apiKey,
+    avatars,
+    defaultAvatarId: avatars[0]?.id,
+    ttsModel: readEnv("BOSON_TTS_MODEL") ?? "higgs-tts-3",
+    videoSize: readBosonVideoSize(),
+  };
+}
+
+export function getPublicRuntimeConfig(): PublicRuntimeConfig {
+  const personas = getProviderPersonas();
+  const bosonAvatars = readBosonAvatarAssets();
+  const anamReady = Boolean(
+    readEnv("ANAM_API_KEY") && readFirstEnv(["ELEVENLABS_API_KEY", "ELEVEN_LABS_API_KEY"]) && personas.length > 0,
+  );
+  const bosonReady = Boolean(readEnv("BOSON_API_KEY") && bosonAvatars.length > 0);
+  const providerSupport: ProviderSupport = {
+    anam: anamReady,
+    boson: bosonReady,
+  };
+
+  return {
+    providerReady: anamReady || bosonReady,
+    providerSupport,
+    defaultProvider: anamReady ? "anam" : bosonReady ? "boson" : null,
     personas: personas.map((persona) => ({ id: persona.id, label: persona.label })),
     defaultPersonaId: personas[0]?.id,
+    bosonAvatars,
+    defaultBosonAvatarId: bosonAvatars[0]?.id,
   };
 }
 

@@ -13,4 +13,8 @@ dated reports or brainstorms.
 - `standards/` - repo-local standards for docs, reports, plans, and source truth.
 - `user-manual/` - operator-facing guides for the working product surface.
 
+## Quick Links
+
+- `operations/commands.md` - single source of truth for run/build/verify commands.
+
 The standards in `docs/standards/` are the operating reference for this repo.
