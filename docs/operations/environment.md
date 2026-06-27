@@ -3,12 +3,24 @@
 Copy `.env.example` to `.env` for local development. Keep real values in `.env` or the
 host secret store only.
 
-## Required For Accepted Provider Surface
+## Required For Anam Live Surface
 
 - `ANAM_API_KEY`
 - `ANAM_AVATAR_ID`
 - `ELEVENLABS_API_KEY`
 - `ELEVENLABS_AGENT_ID`
+
+## Required For Boson Higgs Preview
+
+- `BOSON_API_KEY`
+
+Optional tuning:
+
+- `BOSON_TTS_MODEL` (defaults to `higgs-tts-3`)
+- `BOSON_VIDEO_SIZE` (`640x640` | `640x480` | `480x640`, defaults to `640x640`)
+
+Boson preview reads avatar still images from `assets/avatars/live` and exposes those as selectable
+comparison assets in the console.
 
 Named persona IDs can be configured with `AVATAR_PERSONA_KEYS` plus matching variables. For
 example, `AVATAR_PERSONA_KEYS=MEGAN,SARAH,ALEXIS` tells the server to read `MEGAN`, `SARAH`,

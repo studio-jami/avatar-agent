@@ -7,10 +7,20 @@ Status: Active
 
 1. Confirm `avatar/.env` exists and contains the provider fields from `docs/operations/account-configuration.md`.
 2. Confirm `ANAM_API_KEY`, `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`, and the named persona variables are populated.
+3. For Higgs preview testing, also confirm `BOSON_API_KEY` is populated.
 3. Run `pnpm install` from the repo root if dependencies are not installed.
 4. Run `pnpm dev`.
 5. Open `http://localhost:3638`.
-6. Start a session from the console and watch the status, transcript, and provider trace panels.
+6. Choose `Anam live session` for realtime testing or `Boson Higgs preview` for generated clip testing.
+7. Start or generate from the console and watch status plus transcript/system events.
+
+## Boson Higgs Preview Smoke Test
+
+1. Open the app and switch provider to `Boson Higgs preview`.
+2. Pick an avatar from `assets/avatars/live`.
+3. Enter a short prompt and select Generate.
+4. Wait for status polling to complete and confirm the returned clip renders in the stage player.
+5. Repeat with the same prompt on `Anam live session` for quality comparison.
 
 ## Refresh Local Shared Credentials
 
@@ -52,6 +62,17 @@ Action:
 2. Confirm `ELEVENLABS_AGENT_ID` points to an active Conversational AI agent with credits available.
 3. Confirm the account has access to Conversational AI signed URLs.
 4. Retry from the console and check provider trace IDs in the UI.
+
+## Boson Generation Failure
+
+Symptom: `/api/boson-video` or `/api/boson-video/{videoId}` returns provider errors.
+
+Action:
+
+1. Confirm `BOSON_API_KEY` is valid for the free preview account.
+2. Confirm `assets/avatars/live` contains at least one PNG, JPG, or WEBP file.
+3. Keep prompts short and plain while preview limits are active.
+4. Retry generation and confirm polling reaches `completed` before requesting content.
 
 ## Telemetry Check
 

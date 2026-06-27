@@ -5,13 +5,7 @@ Status: Active
 
 ## Commands
 
-Run commands from the repo root.
-
-- `pnpm install` - install workspace dependencies.
-- `pnpm dev` - start the Avatar Agent web app on port 3638.
-- `pnpm typecheck` - run TypeScript validation for the web app.
-- `pnpm build` - build the web app.
-- `pnpm verify` - run typecheck and build.
+Use `commands.md` for the single run/build/verify command reference.
 
 ## Runtime Surface
 

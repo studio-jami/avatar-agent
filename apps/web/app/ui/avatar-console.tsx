@@ -4,11 +4,19 @@ import * as AnamSdk from "@anam-ai/js-sdk";
 import { useEffect, useRef, useState } from "react";
 
 type ConnectionState = "idle" | "checking" | "ready" | "connecting" | "connected" | "failed";
+type ProviderMode = "anam" | "boson";
 
 type RuntimeConfig = {
   providerReady: boolean;
+  providerSupport: {
+    anam: boolean;
+    boson: boolean;
+  };
+  defaultProvider: ProviderMode | null;
   personas: Array<{ id: string; label: string }>;
   defaultPersonaId?: string;
+  bosonAvatars: Array<{ id: string; label: string; fileName: string }>;
+  defaultBosonAvatarId?: string;
 };
 
 type TranscriptMessage = {
@@ -22,6 +30,20 @@ type SessionResponse = {
   sessionToken?: string;
   persona?: { id: string; label: string };
   error?: string;
+};
+
+type BosonCreateResponse = {
+  videoId?: string;
+  status?: string;
+  progress?: number;
+  error?: string;
+};
+
+type BosonStatusResponse = {
+  videoId?: string;
+  status?: string;
+  progress?: number;
+  error?: unknown;
 };
 
 type AnamClientLike = {
@@ -39,6 +61,10 @@ function telemetry(name: string, attributes: Record<string, string | number | bo
     "/api/telemetry",
     new Blob([JSON.stringify({ name, attributes })], { type: "application/json" }),
   );
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function addAnamListener(client: AnamClientLike, eventName: string, listener: (event: Record<string, unknown>) => void) {
@@ -88,11 +114,30 @@ function appendTranscript(messages: TranscriptMessage[], event: Record<string, u
 
 export function AvatarConsole() {
   const clientRef = useRef<AnamClientLike | null>(null);
+  const bosonPollRef = useRef(0);
   const [state, setState] = useState<ConnectionState>("checking");
   const [runtime, setRuntime] = useState<RuntimeConfig | null>(null);
+  const [provider, setProvider] = useState<ProviderMode>("anam");
   const [personaId, setPersonaId] = useState("");
+  const [bosonAvatarId, setBosonAvatarId] = useState("");
+  const [bosonPrompt, setBosonPrompt] = useState("Give a short intro as the Jami Studio avatar.");
+  const [bosonVideoSrc, setBosonVideoSrc] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<TranscriptMessage[]>([]);
+
+  function addSystemMessage(content: string) {
+    setMessages((current) => {
+      const next = [
+        ...current,
+        {
+          id: crypto.randomUUID(),
+          role: "system" as const,
+          content,
+        },
+      ];
+      return next.slice(-24);
+    });
+  }
 
   useEffect(() => {
     let active = true;
@@ -105,7 +150,9 @@ export function AvatarConsole() {
           return;
         }
         setRuntime(config);
+        setProvider(config.defaultProvider ?? "anam");
         setPersonaId(config.defaultPersonaId ?? config.personas[0]?.id ?? "");
+        setBosonAvatarId(config.defaultBosonAvatarId ?? config.bosonAvatars[0]?.id ?? "");
         setState(config.providerReady ? "ready" : "failed");
         if (!config.providerReady) {
           setError("Provider setup is incomplete.");
@@ -125,10 +172,15 @@ export function AvatarConsole() {
   }, []);
 
   async function startSession() {
+    if (provider === "boson") {
+      await startBosonVideo();
+      return;
+    }
+
     setState("connecting");
     setError(null);
-    setMessages([]);
-    telemetry("avatar.session.start_requested");
+    setBosonVideoSrc(null);
+    telemetry("avatar.session.start_requested", { provider: "anam" });
 
     try {
       const response = await fetch("/api/anam-session", {
@@ -156,11 +208,11 @@ export function AvatarConsole() {
       });
       addAnamListener(client, "CONNECTION_ESTABLISHED", () => {
         setState("connected");
-        telemetry("avatar.session.connected");
+        telemetry("avatar.session.connected", { provider: "anam" });
       });
       addAnamListener(client, "CONNECTION_CLOSED", () => {
         setState("ready");
-        telemetry("avatar.session.closed");
+        telemetry("avatar.session.closed", { provider: "anam" });
       });
       addAnamListener(client, "ERROR", (event) => {
         setError(typeof event.message === "string" ? event.message : "Avatar provider emitted an error.");
@@ -172,45 +224,156 @@ export function AvatarConsole() {
     } catch (sessionError) {
       setState("failed");
       setError(sessionError instanceof Error ? sessionError.message : "Unable to start avatar session.");
-      telemetry("avatar.session.start_failed");
+      telemetry("avatar.session.start_failed", { provider: "anam" });
+    }
+  }
+
+  async function startBosonVideo() {
+    setState("connecting");
+    setError(null);
+    const runId = Date.now();
+    bosonPollRef.current = runId;
+    telemetry("avatar.session.start_requested", { provider: "boson" });
+
+    try {
+      const createResponse = await fetch("/api/boson-video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          avatarId: bosonAvatarId || undefined,
+          prompt: bosonPrompt,
+        }),
+      });
+
+      const created = (await createResponse.json()) as BosonCreateResponse;
+      if (!createResponse.ok || !created.videoId) {
+        throw new Error(created.error ?? "Boson generation request failed.");
+      }
+
+      addSystemMessage(`Boson video requested (${created.videoId}).`);
+
+      while (bosonPollRef.current === runId) {
+        const statusResponse = await fetch(`/api/boson-video/${created.videoId}`, { cache: "no-store" });
+        const statusPayload = (await statusResponse.json()) as BosonStatusResponse;
+        if (!statusResponse.ok || !statusPayload.status) {
+          throw new Error(typeof statusPayload.error === "string" ? statusPayload.error : "Boson status poll failed.");
+        }
+
+        if (statusPayload.status === "completed") {
+          const contentUrl = `/api/boson-video/${created.videoId}/content?ts=${Date.now()}`;
+          setBosonVideoSrc(contentUrl);
+          setState("connected");
+          telemetry("avatar.session.connected", { provider: "boson" });
+          addSystemMessage(`Boson video completed (${created.videoId}).`);
+          return;
+        }
+
+        if (statusPayload.status === "failed") {
+          throw new Error(typeof statusPayload.error === "string" ? statusPayload.error : "Boson video generation failed.");
+        }
+
+        await wait(2000);
+      }
+    } catch (sessionError) {
+      setState("failed");
+      setError(sessionError instanceof Error ? sessionError.message : "Unable to generate Boson video.");
+      telemetry("avatar.session.start_failed", { provider: "boson" });
     }
   }
 
   async function stopSession() {
+    if (provider === "boson") {
+      bosonPollRef.current = 0;
+      setBosonVideoSrc(null);
+      setState(runtime?.providerReady ? "ready" : "idle");
+      telemetry("avatar.session.stop_requested", { provider: "boson" });
+      return;
+    }
+
     await clientRef.current?.stopStreaming?.();
     clientRef.current = null;
     setState(runtime?.providerReady ? "ready" : "idle");
-    telemetry("avatar.session.stop_requested");
+    telemetry("avatar.session.stop_requested", { provider: "anam" });
   }
 
-  const canStart = state === "ready" || state === "failed";
-  const isLive = state === "connecting" || state === "connected";
+  const canStart = state === "ready" || state === "failed" || (provider === "boson" && state === "connected");
+  const isLive = state === "connecting" || (provider === "anam" && state === "connected");
+  const anamEnabled = Boolean(runtime?.providerSupport.anam);
+  const bosonEnabled = Boolean(runtime?.providerSupport.boson);
 
   return (
     <main className="console-shell">
       <section className="stage" aria-label="Avatar session stage">
         <div className="video-frame">
-          <video id="avatar-video" autoPlay playsInline aria-label="Live avatar video" />
+          {provider === "anam" ? (
+            <video id="avatar-video" autoPlay playsInline aria-label="Live avatar video" />
+          ) : (
+            <video src={bosonVideoSrc ?? undefined} autoPlay playsInline controls loop aria-label="Boson avatar video" />
+          )}
           {state !== "connected" ? <div className="video-placeholder" aria-hidden="true" /> : null}
         </div>
 
         <div className="controls" aria-label="Session controls">
           <label>
-            <span>Persona</span>
-            <select value={personaId} onChange={(event) => setPersonaId(event.target.value)} disabled={isLive}>
-              {(runtime?.personas ?? []).map((persona) => (
-                <option key={persona.id} value={persona.id}>
-                  {persona.label}
-                </option>
-              ))}
+            <span>Provider</span>
+            <select
+              value={provider}
+              onChange={(event) => {
+                const next = event.target.value as ProviderMode;
+                setProvider(next);
+                setError(null);
+                setState(runtime?.providerReady ? "ready" : "failed");
+              }}
+              disabled={isLive}
+            >
+              <option value="anam" disabled={!anamEnabled}>
+                Anam live session
+              </option>
+              <option value="boson" disabled={!bosonEnabled}>
+                Boson Higgs preview
+              </option>
             </select>
           </label>
+
+          <label>
+            <span>{provider === "anam" ? "Persona" : "Live asset"}</span>
+            {provider === "anam" ? (
+              <select value={personaId} onChange={(event) => setPersonaId(event.target.value)} disabled={isLive}>
+                {(runtime?.personas ?? []).map((persona) => (
+                  <option key={persona.id} value={persona.id}>
+                    {persona.label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <select value={bosonAvatarId} onChange={(event) => setBosonAvatarId(event.target.value)} disabled={isLive}>
+                {(runtime?.bosonAvatars ?? []).map((avatar) => (
+                  <option key={avatar.id} value={avatar.id}>
+                    {avatar.label}
+                  </option>
+                ))}
+              </select>
+            )}
+          </label>
+
+          {provider === "boson" ? (
+            <label className="full-width">
+              <span>Prompt</span>
+              <input
+                value={bosonPrompt}
+                onChange={(event) => setBosonPrompt(event.target.value)}
+                disabled={isLive}
+                placeholder="Text to speak for comparison clip"
+              />
+            </label>
+          ) : null}
+
           <div className="button-row">
             <button type="button" onClick={startSession} disabled={!canStart}>
-              Start
+              {provider === "anam" ? "Start" : "Generate"}
             </button>
             <button type="button" onClick={stopSession} disabled={!isLive}>
-              Stop
+              {provider === "anam" ? "Stop" : "Clear"}
             </button>
           </div>
         </div>

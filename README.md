@@ -20,6 +20,10 @@ portable across providers and products.
 - `.changes/` - changelog fragments for production-meaningful changes.
 - `assets/avatars/` - curated public avatar assets only. Do not commit staging media or private assets.
 
+## Run Commands
+
+Use `docs/operations/commands.md` as the single run/build/verify command reference.
+
 ## Operating Principles
 
 - Keep the public repo simple, modular, and provider-adaptable.
@@ -34,8 +38,10 @@ portable across providers and products.
 ## Current Status
 
 The initial feasibility recommendation is accepted: build the complete greenfield Anam SDK +
-server-side ElevenLabs working surface, with provider keys kept server-side, telemetry wired by
-configuration, and the access layer held behind clear boundaries for later full-account workflows.
+server-side ElevenLabs working surface, then extend it with Boson Higgs preview generation for
+side-by-side quality evaluation using shared avatar assets. Provider keys remain server-side,
+telemetry stays configuration-driven, and the access layer remains behind clean boundaries for
+later full-account workflows.
 
 The Vercel deployment is live at `https://avatar.jami.studio`. Runtime readiness currently confirms
 ElevenLabs, Anam, PostHog, Amplitude, and OTLP exporter configuration. The live session broker
