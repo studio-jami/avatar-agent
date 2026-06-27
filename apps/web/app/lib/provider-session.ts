@@ -45,6 +45,21 @@ async function readProviderError(response: Response): Promise<string> {
   return text.slice(0, 500) || response.statusText;
 }
 
+async function requestAnamSessionToken(
+  anamApiKey: string,
+  body: Record<string, unknown>,
+): Promise<Response> {
+  return fetch(ANAM_SESSION_TOKEN_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${anamApiKey}`,
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+}
+
 export async function createAvatarSession(input: SessionRequestInput): Promise<AvatarSession> {
   const config = getProviderConfig();
   const persona = getProviderPersona(asOptionalString(input.personaId) ?? config.defaultPersonaId);
@@ -89,20 +104,31 @@ export async function createAvatarSession(input: SessionRequestInput): Promise<A
     elevenLabsAgentSettings.dynamicVariables = dynamicVariables;
   }
 
-  const anamResponse = await fetch(ANAM_SESSION_TOKEN_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${config.anamApiKey}`,
+  const primaryPersonaConfig = persona.personaId
+    ? { personaId: persona.personaId }
+    : { avatarId: persona.avatarId };
+
+  if (!primaryPersonaConfig.personaId && !primaryPersonaConfig.avatarId) {
+    throw new Error("Missing persona configuration for Anam session token");
+  }
+
+  let anamResponse = await requestAnamSessionToken(config.anamApiKey, {
+    personaConfig: primaryPersonaConfig,
+    environment: {
+      elevenLabsAgentSettings,
     },
-    body: JSON.stringify({
-      personaConfig: { avatarId: persona.avatarId },
+  });
+
+  // Some existing deployments stored persona IDs in the named vars before this repo normalized semantics.
+  // If personaId fails validation, retry once as avatarId for backward compatibility.
+  if (!anamResponse.ok && anamResponse.status === 400 && persona.personaId) {
+    anamResponse = await requestAnamSessionToken(config.anamApiKey, {
+      personaConfig: { avatarId: persona.personaId },
       environment: {
         elevenLabsAgentSettings,
       },
-    }),
-    cache: "no-store",
-  });
+    });
+  }
 
   if (!anamResponse.ok) {
     throw new Error(`Anam session token request failed (${anamResponse.status}): ${await readProviderError(anamResponse)}`);

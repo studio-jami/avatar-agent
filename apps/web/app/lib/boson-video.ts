@@ -31,6 +31,7 @@ function asVideoSize(value: unknown): BosonVideoSize | undefined {
 
 function liveAvatarDirectory(): string {
   const candidates = [
+    resolve(process.cwd(), "public/avatars/live"),
     resolve(process.cwd(), "../../assets/avatars/live"),
     resolve(process.cwd(), "../assets/avatars/live"),
     resolve(process.cwd(), "assets/avatars/live"),

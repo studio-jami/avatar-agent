@@ -21,7 +21,8 @@ type BosonConfig = {
 type ProviderPersona = {
   id: string;
   label: string;
-  avatarId: string;
+  personaId?: string;
+  avatarId?: string;
   agentId: string;
   voiceId?: string;
 };
@@ -111,6 +112,7 @@ function readBosonVideoSize(): BosonVideoSize {
 
 function liveAvatarDirectory(): string | undefined {
   const candidates = [
+    resolve(process.cwd(), "public/avatars/live"),
     resolve(process.cwd(), "../../assets/avatars/live"),
     resolve(process.cwd(), "../assets/avatars/live"),
     resolve(process.cwd(), "assets/avatars/live"),
@@ -142,7 +144,7 @@ function uniquePersonas(personas: ProviderPersona[]): ProviderPersona[] {
   const unique: ProviderPersona[] = [];
 
   for (const persona of personas) {
-    const fingerprint = `${persona.avatarId}::${persona.agentId}`;
+    const fingerprint = `${persona.personaId ?? ""}:${persona.avatarId ?? ""}::${persona.agentId}`;
     if (!seen.has(fingerprint)) {
       seen.add(fingerprint);
       unique.push(persona);
@@ -166,16 +168,17 @@ function readPersonaPresets(): ProviderPersona[] {
       }
 
       const preset = entry as Record<string, unknown>;
+      const personaId = typeof preset.personaId === "string" ? preset.personaId.trim() : "";
       const avatarId = typeof preset.avatarId === "string" ? preset.avatarId.trim() : "";
       const agentId = typeof preset.agentId === "string" ? preset.agentId.trim() : "";
-      if (!avatarId || !agentId) {
+      if ((!personaId && !avatarId) || !agentId) {
         return [];
       }
 
       const label = typeof preset.label === "string" && preset.label.trim() ? preset.label.trim() : `Persona ${index + 1}`;
       const id = typeof preset.id === "string" && preset.id.trim() ? safeId(preset.id) : safeId(label);
       const voiceId = typeof preset.voiceId === "string" && preset.voiceId.trim() ? preset.voiceId.trim() : undefined;
-      return [{ id, label, avatarId, agentId, voiceId }];
+      return [{ id, label, personaId: personaId || undefined, avatarId: avatarId || undefined, agentId, voiceId }];
     }));
   }
 
@@ -190,8 +193,8 @@ function readPersonaPresets(): ProviderPersona[] {
     .filter(Boolean);
 
   const namedPersonas = namedKeys.flatMap((key): ProviderPersona[] => {
-    const avatarId = readEnv(key);
-    if (!avatarId) {
+    const personaId = readEnv(`${key}_ANAM_PERSONA_ID`) ?? readEnv(key);
+    if (!personaId) {
       return [];
     }
 
@@ -200,7 +203,7 @@ function readPersonaPresets(): ProviderPersona[] {
       {
         id: safeId(label),
         label,
-        avatarId,
+        personaId,
         agentId: readEnv(`${key}_ELEVENLABS_AGENT_ID`) ?? agentId,
         voiceId: readEnv(`${key}_ELEVENLABS_VOICE_ID`) ?? readEnv("ELEVENLABS_VOICE_ID"),
       },
