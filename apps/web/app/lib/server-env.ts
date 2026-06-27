@@ -352,7 +352,7 @@ export function getPublicRuntimeConfig(): PublicRuntimeConfig {
   return {
     providerReady: anamReady || elevenLabsReady || bosonReady,
     providerSupport,
-    defaultProvider: anamReady ? "anam" : elevenLabsReady ? "elevenlabs" : bosonReady ? "boson" : null,
+    defaultProvider: elevenLabsReady ? "elevenlabs" : anamReady ? "anam" : bosonReady ? "boson" : null,
     personas: personas.map((persona) => ({ id: persona.id, label: persona.label })),
     defaultPersonaId: personas[0]?.id,
     elevenLabsAgent: elevenLabsAgentLabel ? { label: elevenLabsAgentLabel } : undefined,

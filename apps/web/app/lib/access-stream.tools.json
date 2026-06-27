@@ -1,0 +1,129 @@
+[
+  {
+    "name": "get_current_time",
+    "description": "Get the current date and time. Use this whenever the user asks what time it is, what day or date it is, or needs the current timestamp.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "timezone": {
+          "type": "string",
+          "description": "Optional IANA timezone name such as 'America/New_York' or 'Europe/London'. If omitted, the access stream's default timezone is used."
+        }
+      },
+      "required": []
+    }
+  },
+  {
+    "name": "list_access_capabilities",
+    "description": "List the tools and capabilities currently wired into your access stream. Use this when the user asks what you can do, what tools you have, or what you have access to right now.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "get_today_brief",
+    "description": "Get a brief of upcoming meetings and open tasks from the ops feed (the connected CRM / planning system). Use when the user asks what's on their schedule, what's coming up, what's on their plate, or asks for a daily brief or status.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "find_account",
+    "description": "Look up a company or account in the ops feed (CRM) by name and return its status, website, and last interaction. Use when the user asks about a specific company, vendor, partner, or program — for example 'what's the status with Rippling' or 'tell me about Mintlify'.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "The account or company name to look up, e.g. 'Rippling' or 'Mintlify'."
+        }
+      },
+      "required": ["query"]
+    }
+  },
+  {
+    "name": "list_accounts",
+    "description": "List the companies/accounts currently tracked in the ops feed (CRM). Use when the user asks what accounts, companies, vendors, or prospects they are tracking or have in their pipeline.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "find_meeting",
+    "description": "Look up a meeting in the ops feed by name and return when it is, who's attending, and any prep notes. Use when the user wants context before or about a meeting — e.g. 'pull up my Rippling meeting' or 'what's the prep for the Amplitude call'.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Part of the meeting title or company to find, e.g. 'Rippling' or 'Amplitude'."
+        }
+      },
+      "required": ["query"]
+    }
+  },
+  {
+    "name": "find_contact",
+    "description": "Look up a person/contact in the ops feed (CRM) by name and return their title, email, and last interaction. Use when the user asks who someone is or for a person's contact details.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "The person's name to look up, e.g. 'Tyler Bray'."
+        }
+      },
+      "required": ["query"]
+    }
+  },
+  {
+    "name": "log_note",
+    "description": "Save a note into the ops feed (CRM). Use ONLY when the user explicitly asks to record, log, save, or make a note of something. Optionally attach it to an account by name.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "note": {
+          "type": "string",
+          "description": "The content of the note to save — what the user wants recorded."
+        },
+        "title": {
+          "type": "string",
+          "description": "Optional short title for the note. If omitted, one is derived from the content."
+        },
+        "account": {
+          "type": "string",
+          "description": "Optional account/company name to attach the note to, e.g. 'Rippling'."
+        }
+      },
+      "required": ["note"]
+    }
+  },
+  {
+    "name": "create_task",
+    "description": "Create a task/to-do in the ops feed (CRM). Use ONLY when the user explicitly asks to create a task, add a to-do, or remind them to do something. Optionally attach it to an account and set a due date.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "What needs to be done — the task title."
+        },
+        "due_date": {
+          "type": "string",
+          "description": "Optional due date as an ISO 8601 datetime, e.g. '2026-06-28T17:00:00Z'. Derive this from the current date if the user says something relative like 'tomorrow'."
+        },
+        "account": {
+          "type": "string",
+          "description": "Optional account/company name to attach the task to."
+        }
+      },
+      "required": ["title"]
+    }
+  }
+]

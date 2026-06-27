@@ -2,7 +2,8 @@
 
 import * as AnamSdk from "@anam-ai/js-sdk";
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import accessStreamToolContracts from "../lib/access-stream.tools.json";
 
 type ConnectionState = "idle" | "checking" | "ready" | "connecting" | "connected" | "failed";
 type ProviderMode = "anam" | "elevenlabs" | "boson";
@@ -69,6 +70,41 @@ function telemetry(name: string, attributes: Record<string, string | number | bo
   navigator.sendBeacon?.(
     "/api/telemetry",
     new Blob([JSON.stringify({ name, attributes })], { type: "application/json" }),
+  );
+}
+
+type AccessStreamToolContract = { name: string; description: string };
+
+type ClientToolHandler = (parameters: Record<string, unknown>) => Promise<string>;
+
+function buildAccessStreamClientTools(
+  onToolEvent: (toolName: string, phase: "invoked" | "completed" | "failed") => void,
+): Record<string, ClientToolHandler> {
+  const contracts = accessStreamToolContracts as AccessStreamToolContract[];
+
+  return Object.fromEntries(
+    contracts.map((contract) => [
+      contract.name,
+      async (parameters: Record<string, unknown>) => {
+        onToolEvent(contract.name, "invoked");
+        try {
+          const response = await fetch("/api/access-stream", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tool: contract.name, parameters: parameters ?? {} }),
+          });
+          const payload = (await response.json()) as { result?: string; error?: string };
+          if (!response.ok || typeof payload.result !== "string") {
+            throw new Error(payload.error ?? "Access stream tool failed.");
+          }
+          onToolEvent(contract.name, "completed");
+          return payload.result;
+        } catch (error) {
+          onToolEvent(contract.name, "failed");
+          return error instanceof Error ? `Tool error: ${error.message}` : "Tool error.";
+        }
+      },
+    ]),
   );
 }
 
@@ -193,7 +229,25 @@ function AvatarConsoleContent() {
   const [bosonVideoSrc, setBosonVideoSrc] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<TranscriptMessage[]>([]);
+  const accessStreamClientTools = useMemo(
+    () =>
+      buildAccessStreamClientTools((toolName, phase) => {
+        telemetry(`avatar.access_stream.${phase}`, { tool: toolName, provider: "elevenlabs" });
+        setMessages((current) =>
+          [
+            ...current,
+            {
+              id: crypto.randomUUID(),
+              role: "system" as const,
+              content: `access stream · ${toolName} ${phase}`,
+            },
+          ].slice(-24),
+        );
+      }),
+    [],
+  );
   const elevenLabsConversation = useConversation({
+    clientTools: accessStreamClientTools,
     onConnect: () => {
       setState("connected");
       telemetry("avatar.session.connected", { provider: "elevenlabs" });
