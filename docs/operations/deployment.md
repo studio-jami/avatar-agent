@@ -10,6 +10,7 @@ The production Vercel deployment is live at `https://avatar.jami.studio`.
 - Page reachability: healthy.
 - Runtime endpoint: healthy and returns non-secret readiness flags.
 - Telemetry endpoint: healthy and accepts safe lifecycle events.
+- ElevenLabs direct conversation-token broker: available when `ELEVENLABS_API_KEY` and `ELEVENLABS_AGENT_ID` are set.
 - ElevenLabs signed URL account check: healthy.
 - Anam session token broker: healthy and returns a session token through the server-side broker.
 
@@ -24,6 +25,7 @@ Required for live avatar sessions:
 - `AVATAR_PERSONA_KEYS` and any named persona variables used by that list
 - `ELEVENLABS_API_KEY`
 - `ELEVENLABS_AGENT_ID`
+- `ELEVENLABS_AGENT_NAME` (optional display label)
 - `PUBLIC_APP_URL`
 
 Configured support lanes:
@@ -47,7 +49,8 @@ Deferred lanes:
 2. Redeploy the production project.
 3. Check `/api/runtime` for readiness flags.
 4. Post a safe smoke event to `/api/telemetry`.
-5. Post to `/api/anam-session` and verify a session token is returned without logging the token.
+5. Post to `/api/elevenlabs-session` and verify a conversation token is returned without logging the token.
+6. Post to `/api/anam-session` and verify a session token is returned without logging the token.
 
 ## Latest Production Smoke
 

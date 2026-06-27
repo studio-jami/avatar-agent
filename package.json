@@ -7,6 +7,7 @@
     "dev": "node scripts/dev.mjs",
     "build": "pnpm --filter @studio-jami/avatar-agent-web build",
     "typecheck": "pnpm --filter @studio-jami/avatar-agent-web typecheck",
+    "sync:tools": "node scripts/sync-agent-tools.mjs",
     "verify": "pnpm typecheck && pnpm build"
   },
   "pnpm": {

@@ -3,6 +3,20 @@
 Copy `.env.example` to `.env` for local development. Keep real values in `.env` or the
 host secret store only.
 
+## Required For ElevenLabs Direct Agent
+
+- `ELEVENLABS_API_KEY`
+- `ELEVENLABS_AGENT_ID`
+
+Optional display metadata:
+
+- `ELEVENLABS_AGENT_NAME` (defaults to `ElevenLabs agent`)
+
+The direct agent surface uses the server-side `/api/elevenlabs-session` route to exchange
+`ELEVENLABS_API_KEY` plus `ELEVENLABS_AGENT_ID` for a short-lived conversation token, then starts
+the browser SDK with WebRTC. For the current deployment lane, set `ELEVENLABS_AGENT_ID` in local
+and host secret storage to the agent ID supplied for `My Agent`; do not commit the ID.
+
 ## Required For Anam Live Surface
 
 - `ANAM_API_KEY`
