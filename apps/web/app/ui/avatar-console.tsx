@@ -1,20 +1,23 @@
 "use client";
 
 import * as AnamSdk from "@anam-ai/js-sdk";
+import { ConversationProvider, useConversation } from "@elevenlabs/react";
 import { useEffect, useRef, useState } from "react";
 
 type ConnectionState = "idle" | "checking" | "ready" | "connecting" | "connected" | "failed";
-type ProviderMode = "anam" | "boson";
+type ProviderMode = "anam" | "elevenlabs" | "boson";
 
 type RuntimeConfig = {
   providerReady: boolean;
   providerSupport: {
     anam: boolean;
+    elevenlabs: boolean;
     boson: boolean;
   };
   defaultProvider: ProviderMode | null;
   personas: Array<{ id: string; label: string }>;
   defaultPersonaId?: string;
+  elevenLabsAgent?: { label: string };
   bosonAvatars: Array<{ id: string; label: string; fileName: string }>;
   defaultBosonAvatarId?: string;
 };
@@ -29,6 +32,12 @@ type TranscriptMessage = {
 type SessionResponse = {
   sessionToken?: string;
   persona?: { id: string; label: string };
+  error?: string;
+};
+
+type ElevenLabsSessionResponse = {
+  conversationToken?: string;
+  agent?: { label: string };
   error?: string;
 };
 
@@ -112,7 +121,67 @@ function appendTranscript(messages: TranscriptMessage[], event: Record<string, u
   ].slice(-24);
 }
 
-export function AvatarConsole() {
+function asEventRecord(value: unknown): Record<string, unknown> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+
+  return value as Record<string, unknown>;
+}
+
+function nestedString(record: Record<string, unknown>, key: string, nestedKey: string): string | undefined {
+  const child = asEventRecord(record[key]);
+  const value = child?.[nestedKey];
+  return typeof value === "string" && value.trim() ? value : undefined;
+}
+
+function appendElevenLabsTranscript(messages: TranscriptMessage[], event: unknown): TranscriptMessage[] {
+  const record = asEventRecord(event);
+  if (!record) {
+    return messages;
+  }
+
+  const type = typeof record.type === "string" ? record.type : "message";
+  const content =
+    nestedString(record, "user_transcription_event", "user_transcript") ??
+    nestedString(record, "agent_response_event", "agent_response") ??
+    nestedString(record, "agent_response_correction_event", "corrected_agent_response") ??
+    (typeof record.message === "string" ? record.message : undefined) ??
+    (typeof record.text === "string" ? record.text : undefined);
+
+  if (!content) {
+    return messages;
+  }
+
+  const role: TranscriptMessage["role"] = type.includes("user")
+    ? "user"
+    : type.includes("agent")
+      ? "persona"
+      : "system";
+
+  return [
+    ...messages,
+    {
+      id: crypto.randomUUID(),
+      role,
+      content,
+    },
+  ].slice(-24);
+}
+
+function providerLabel(provider: ProviderMode): string {
+  if (provider === "anam") {
+    return "Anam live session";
+  }
+
+  if (provider === "elevenlabs") {
+    return "ElevenLabs direct agent";
+  }
+
+  return "Boson Higgs preview";
+}
+
+function AvatarConsoleContent() {
   const clientRef = useRef<AnamClientLike | null>(null);
   const bosonPollRef = useRef(0);
   const [state, setState] = useState<ConnectionState>("checking");
@@ -124,6 +193,23 @@ export function AvatarConsole() {
   const [bosonVideoSrc, setBosonVideoSrc] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<TranscriptMessage[]>([]);
+  const elevenLabsConversation = useConversation({
+    onConnect: () => {
+      setState("connected");
+      telemetry("avatar.session.connected", { provider: "elevenlabs" });
+    },
+    onDisconnect: () => {
+      setState(runtime?.providerReady ? "ready" : "idle");
+      telemetry("avatar.session.closed", { provider: "elevenlabs" });
+    },
+    onMessage: (message) => {
+      setMessages((current) => appendElevenLabsTranscript(current, message));
+    },
+    onError: (message) => {
+      setError(typeof message === "string" ? message : "ElevenLabs provider emitted an error.");
+      setState("failed");
+    },
+  });
 
   function addSystemMessage(content: string) {
     setMessages((current) => {
@@ -171,9 +257,18 @@ export function AvatarConsole() {
     };
   }, []);
 
+  function providerIsReady(nextProvider: ProviderMode): boolean {
+    return Boolean(runtime?.providerSupport[nextProvider]);
+  }
+
   async function startSession() {
     if (provider === "boson") {
       await startBosonVideo();
+      return;
+    }
+
+    if (provider === "elevenlabs") {
+      await startElevenLabsConversation();
       return;
     }
 
@@ -225,6 +320,40 @@ export function AvatarConsole() {
       setState("failed");
       setError(sessionError instanceof Error ? sessionError.message : "Unable to start avatar session.");
       telemetry("avatar.session.start_failed", { provider: "anam" });
+    }
+  }
+
+  async function startElevenLabsConversation() {
+    setState("connecting");
+    setError(null);
+    setBosonVideoSrc(null);
+    telemetry("avatar.session.start_requested", { provider: "elevenlabs" });
+
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      const response = await fetch("/api/elevenlabs-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const payload = (await response.json()) as ElevenLabsSessionResponse;
+      if (!response.ok || !payload.conversationToken) {
+        throw new Error(payload.error ?? "ElevenLabs conversation token request failed.");
+      }
+
+      addSystemMessage(`ElevenLabs agent ready (${payload.agent?.label ?? "direct agent"}).`);
+      elevenLabsConversation.startSession({
+        conversationToken: payload.conversationToken,
+        connectionType: "webrtc",
+        userId: "jami-operator",
+        dynamicVariables: {
+          surface: "avatar-agent-web",
+        },
+      });
+    } catch (sessionError) {
+      setState("failed");
+      setError(sessionError instanceof Error ? sessionError.message : "Unable to start ElevenLabs conversation.");
+      telemetry("avatar.session.start_failed", { provider: "elevenlabs" });
     }
   }
 
@@ -290,14 +419,21 @@ export function AvatarConsole() {
       return;
     }
 
+    if (provider === "elevenlabs") {
+      elevenLabsConversation.endSession();
+      setState(runtime?.providerReady ? "ready" : "idle");
+      telemetry("avatar.session.stop_requested", { provider: "elevenlabs" });
+      return;
+    }
+
     await clientRef.current?.stopStreaming?.();
     clientRef.current = null;
     setState(runtime?.providerReady ? "ready" : "idle");
     telemetry("avatar.session.stop_requested", { provider: "anam" });
   }
 
-  const canStart = state === "ready" || state === "failed" || (provider === "boson" && state === "connected");
-  const isLive = state === "connecting" || (provider === "anam" && state === "connected");
+  const canStart = (providerIsReady(provider) && (state === "ready" || state === "failed")) || (provider === "boson" && state === "connected");
+  const isLive = state === "connecting" || ((provider === "anam" || provider === "elevenlabs") && state === "connected");
 
   return (
     <main className="console-shell">
@@ -305,6 +441,12 @@ export function AvatarConsole() {
         <div className="video-frame">
           {provider === "anam" ? (
             <video id="avatar-video" autoPlay playsInline aria-label="Live avatar video" />
+          ) : provider === "elevenlabs" ? (
+            <div className="audio-agent" data-speaking={elevenLabsConversation.isSpeaking}>
+              <span>{runtime?.elevenLabsAgent?.label ?? "ElevenLabs agent"}</span>
+              <strong>{elevenLabsConversation.isSpeaking ? "speaking" : "listening"}</strong>
+              <small>{elevenLabsConversation.status}</small>
+            </div>
           ) : (
             <video src={bosonVideoSrc ?? undefined} autoPlay playsInline controls loop aria-label="Boson avatar video" />
           )}
@@ -319,21 +461,25 @@ export function AvatarConsole() {
               onChange={(event) => {
                 const next = event.target.value as ProviderMode;
                 setProvider(next);
-                setError(null);
-                setState(runtime?.providerReady ? "ready" : "failed");
+                const ready = Boolean(runtime?.providerSupport[next]);
+                setError(ready ? null : `${providerLabel(next)} setup is incomplete.`);
+                setState(ready ? "ready" : "failed");
               }}
               disabled={isLive}
             >
-              <option value="anam">
-                Anam live session
-              </option>
-              <option value="boson">
-                Boson Higgs preview
-              </option>
+              <option value="anam">Anam live session</option>
+              <option value="elevenlabs">ElevenLabs direct agent</option>
+              <option value="boson">Boson Higgs preview</option>
             </select>
           </label>
 
-          <label>
+          {provider === "elevenlabs" ? (
+            <label>
+              <span>Agent</span>
+              <input value={runtime?.elevenLabsAgent?.label ?? "ElevenLabs agent"} readOnly disabled />
+            </label>
+          ) : (
+            <label>
             <span>{provider === "anam" ? "Persona" : "Live asset"}</span>
             {provider === "anam" ? (
               <select value={personaId} onChange={(event) => setPersonaId(event.target.value)} disabled={isLive}>
@@ -352,7 +498,8 @@ export function AvatarConsole() {
                 ))}
               </select>
             )}
-          </label>
+            </label>
+          )}
 
           {provider === "boson" ? (
             <label className="full-width">
@@ -368,10 +515,10 @@ export function AvatarConsole() {
 
           <div className="button-row">
             <button type="button" onClick={startSession} disabled={!canStart}>
-              {provider === "anam" ? "Start" : "Generate"}
+              {provider === "boson" ? "Generate" : "Start"}
             </button>
             <button type="button" onClick={stopSession} disabled={!isLive}>
-              {provider === "anam" ? "Stop" : "Clear"}
+              {provider === "boson" ? "Clear" : "Stop"}
             </button>
           </div>
         </div>
@@ -394,5 +541,13 @@ export function AvatarConsole() {
         </section>
       </aside>
     </main>
+  );
+}
+
+export function AvatarConsole() {
+  return (
+    <ConversationProvider>
+      <AvatarConsoleContent />
+    </ConversationProvider>
   );
 }

@@ -77,6 +77,35 @@ select {
   object-fit: cover;
 }
 
+.audio-agent {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  text-align: center;
+  background:
+    radial-gradient(circle at 50% 45%, rgb(23 107 91 / 24%), transparent 16rem),
+    linear-gradient(135deg, rgb(255 250 240 / 76%), rgb(220 212 193 / 84%));
+}
+
+.audio-agent span,
+.audio-agent small {
+  color: var(--muted);
+}
+
+.audio-agent strong {
+  color: var(--accent-strong);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 5vw, 4.8rem);
+  font-weight: 500;
+}
+
+.audio-agent[data-speaking="true"] strong {
+  color: var(--accent);
+}
+
 .video-placeholder {
   display: grid;
   place-items: center;

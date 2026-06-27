@@ -34,6 +34,7 @@ Preferred app-local names:
 - named persona variables such as `MEGAN`, `SARAH`, and `ALEXIS`
 - `ELEVENLABS_API_KEY`
 - `ELEVENLABS_AGENT_ID`
+- `ELEVENLABS_AGENT_NAME`
 - `POSTHOG_API_KEY`
 - `POSTHOG_HOST`
 - `AMPLITUDE_API_KEY`

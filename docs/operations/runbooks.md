@@ -92,9 +92,11 @@ Current production domain: `https://avatar.jami.studio`.
 1. Open `https://avatar.jami.studio` and confirm the page title is `Avatar Agent`.
 2. Request `https://avatar.jami.studio/api/runtime` and confirm readiness flags only are returned.
 3. Post a safe event to `https://avatar.jami.studio/api/telemetry` and confirm `{ "ok": true }`.
-4. Post `{}` to `https://avatar.jami.studio/api/anam-session`.
-5. Treat a returned `sessionToken` as success and do not log it.
-6. If the session call returns Anam `Invalid API key`, replace the Anam credential before changing app code.
+4. Post `{}` to `https://avatar.jami.studio/api/elevenlabs-session`.
+5. Treat a returned `conversationToken` as success and do not log it.
+6. Post `{}` to `https://avatar.jami.studio/api/anam-session`.
+7. Treat a returned `sessionToken` as success and do not log it.
+8. If the session call returns Anam `Invalid API key`, replace the Anam credential before changing app code.
 
 ## Deployment Secret Setup
 

@@ -8,6 +8,12 @@ type ProviderConfig = {
   defaultPersonaId?: string;
 };
 
+type ElevenLabsConfig = {
+  apiKey: string;
+  agentId: string;
+  agentLabel: string;
+};
+
 export type BosonVideoSize = "640x640" | "640x480" | "480x640";
 
 type BosonConfig = {
@@ -40,15 +46,17 @@ type BosonAvatarAsset = {
 
 type ProviderSupport = {
   anam: boolean;
+  elevenlabs: boolean;
   boson: boolean;
 };
 
 type PublicRuntimeConfig = {
   providerReady: boolean;
   providerSupport: ProviderSupport;
-  defaultProvider: "anam" | "boson" | null;
+  defaultProvider: "anam" | "elevenlabs" | "boson" | null;
   personas: PublicPersona[];
   defaultPersonaId?: string;
+  elevenLabsAgent?: { label: string };
   bosonAvatars: BosonAvatarAsset[];
   defaultBosonAvatarId?: string;
 };
@@ -271,6 +279,35 @@ export function getProviderConfig(): ProviderConfig {
   };
 }
 
+export function getElevenLabsConfig(): ElevenLabsConfig {
+  const apiKey = readFirstEnv(["ELEVENLABS_API_KEY", "ELEVEN_LABS_API_KEY"]);
+  const agentId = readEnv("ELEVENLABS_AGENT_ID");
+
+  if (!apiKey || !agentId) {
+    const missing = [
+      !apiKey ? "ELEVENLABS_API_KEY" : null,
+      !agentId ? "ELEVENLABS_AGENT_ID" : null,
+    ].filter(Boolean);
+
+    throw new Error(`Missing ElevenLabs provider environment: ${missing.join(", ")}`);
+  }
+
+  return {
+    apiKey,
+    agentId,
+    agentLabel: readEnv("ELEVENLABS_AGENT_NAME") ?? "ElevenLabs agent",
+  };
+}
+
+export function getElevenLabsAgentLabel(): string | undefined {
+  const agentId = readEnv("ELEVENLABS_AGENT_ID");
+  if (!agentId) {
+    return undefined;
+  }
+
+  return readEnv("ELEVENLABS_AGENT_NAME") ?? "ElevenLabs agent";
+}
+
 export function getBosonAvatarAssets(): BosonAvatarAsset[] {
   return readBosonAvatarAssets();
 }
@@ -300,21 +337,25 @@ export function getBosonConfig(): BosonConfig {
 export function getPublicRuntimeConfig(): PublicRuntimeConfig {
   const personas = getProviderPersonas();
   const bosonAvatars = readBosonAvatarAssets();
+  const elevenLabsReady = Boolean(readFirstEnv(["ELEVENLABS_API_KEY", "ELEVEN_LABS_API_KEY"]) && readEnv("ELEVENLABS_AGENT_ID"));
+  const elevenLabsAgentLabel = getElevenLabsAgentLabel();
   const anamReady = Boolean(
     readEnv("ANAM_API_KEY") && readFirstEnv(["ELEVENLABS_API_KEY", "ELEVEN_LABS_API_KEY"]) && personas.length > 0,
   );
   const bosonReady = Boolean(readEnv("BOSON_API_KEY") && bosonAvatars.length > 0);
   const providerSupport: ProviderSupport = {
     anam: anamReady,
+    elevenlabs: elevenLabsReady,
     boson: bosonReady,
   };
 
   return {
-    providerReady: anamReady || bosonReady,
+    providerReady: anamReady || elevenLabsReady || bosonReady,
     providerSupport,
-    defaultProvider: anamReady ? "anam" : bosonReady ? "boson" : null,
+    defaultProvider: anamReady ? "anam" : elevenLabsReady ? "elevenlabs" : bosonReady ? "boson" : null,
     personas: personas.map((persona) => ({ id: persona.id, label: persona.label })),
     defaultPersonaId: personas[0]?.id,
+    elevenLabsAgent: elevenLabsAgentLabel ? { label: elevenLabsAgentLabel } : undefined,
     bosonAvatars,
     defaultBosonAvatarId: bosonAvatars[0]?.id,
   };
