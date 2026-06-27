@@ -2,8 +2,30 @@
 
 import * as AnamSdk from "@anam-ai/js-sdk";
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
+import dynamic from "next/dynamic";
+import { MessageSquare, Settings, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import accessStreamToolContracts from "../lib/access-stream.tools.json";
+import { ModeToggle } from "@/components/mode-toggle";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+import type { AgentState } from "@/components/ui/orb";
+
+const Orb = dynamic(() => import("@/components/ui/orb").then((mod) => mod.Orb), {
+  ssr: false,
+  loading: () => <div className="size-full animate-pulse rounded-full bg-muted/40" />,
+});
 
 type ConnectionState = "idle" | "checking" | "ready" | "connecting" | "connected" | "failed";
 type ProviderMode = "anam" | "elevenlabs" | "boson";
@@ -189,11 +211,13 @@ function appendElevenLabsTranscript(messages: TranscriptMessage[], event: unknow
     return messages;
   }
 
-  const role: TranscriptMessage["role"] = type.includes("user")
-    ? "user"
-    : type.includes("agent")
-      ? "persona"
-      : "system";
+  const source = typeof record.source === "string" ? record.source : "";
+  const role: TranscriptMessage["role"] =
+    source === "user" || type.includes("user")
+      ? "user"
+      : source === "ai" || source === "agent" || type.includes("agent")
+        ? "persona"
+        : "system";
 
   return [
     ...messages,
@@ -229,6 +253,7 @@ function AvatarConsoleContent() {
   const [bosonVideoSrc, setBosonVideoSrc] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<TranscriptMessage[]>([]);
+  const [showTranscript, setShowTranscript] = useState(false);
   const accessStreamClientTools = useMemo(
     () =>
       buildAccessStreamClientTools((toolName, phase) => {
@@ -489,110 +514,217 @@ function AvatarConsoleContent() {
   const canStart = (providerIsReady(provider) && (state === "ready" || state === "failed")) || (provider === "boson" && state === "connected");
   const isLive = state === "connecting" || ((provider === "anam" || provider === "elevenlabs") && state === "connected");
 
+  const support = runtime?.providerSupport ?? { anam: false, elevenlabs: false, boson: false };
+  const personas = runtime?.personas ?? [];
+  const bosonAvatars = runtime?.bosonAvatars ?? [];
+  const agentLabel = runtime?.elevenLabsAgent?.label ?? "Avatar";
+  const activePersona = personas.find((persona) => persona.id === personaId);
+  const displayLabel =
+    provider === "elevenlabs" ? agentLabel : provider === "anam" ? activePersona?.label ?? "Avatar" : "Preview clip";
+
+  const statusLabel = !support[provider]
+    ? "Needs setup"
+    : state === "connected"
+      ? provider === "elevenlabs"
+        ? elevenLabsConversation.isSpeaking
+          ? "Speaking"
+          : "Listening"
+        : "Live"
+      : state === "connecting"
+        ? "Connecting"
+        : state === "failed"
+          ? "Error"
+          : state === "checking"
+            ? "Loading"
+            : "Ready";
+
+  const orbAgentState: AgentState =
+    provider === "elevenlabs" && state === "connected"
+      ? elevenLabsConversation.isSpeaking
+        ? "talking"
+        : "listening"
+      : state === "connecting"
+        ? "thinking"
+        : null;
+
+  function handleProviderChange(value: string) {
+    const next = value as ProviderMode;
+    setProvider(next);
+    const ready = Boolean(runtime?.providerSupport[next]);
+    setError(ready ? null : `${providerLabel(next)} setup is incomplete.`);
+    setState(ready ? "ready" : "failed");
+  }
+
   return (
-    <main className="console-shell">
-      <section className="stage" aria-label="Avatar session stage">
-        <div className="video-frame">
-          {provider === "anam" ? (
-            <video id="avatar-video" autoPlay playsInline aria-label="Live avatar video" />
-          ) : provider === "elevenlabs" ? (
-            <div className="audio-agent" data-speaking={elevenLabsConversation.isSpeaking}>
-              <span>{runtime?.elevenLabsAgent?.label ?? "ElevenLabs agent"}</span>
-              <strong>{elevenLabsConversation.isSpeaking ? "speaking" : "listening"}</strong>
-              <small>{elevenLabsConversation.status}</small>
-            </div>
-          ) : (
-            <video src={bosonVideoSrc ?? undefined} autoPlay playsInline controls loop aria-label="Boson avatar video" />
-          )}
-          {state !== "connected" ? <div className="video-placeholder" aria-hidden="true" /> : null}
+    <main className="relative flex min-h-svh flex-col overflow-hidden">
+      <header className="flex items-center justify-between gap-2 px-4 py-3 sm:px-6">
+        <div className="flex items-center gap-2.5">
+          <span className="text-sm font-medium tracking-tight">{displayLabel}</span>
+          <Badge variant="secondary" className="font-normal text-muted-foreground">
+            {statusLabel}
+          </Badge>
         </div>
 
-        <div className="controls" aria-label="Session controls">
-          <label>
-            <span>Provider</span>
-            <select
-              value={provider}
-              onChange={(event) => {
-                const next = event.target.value as ProviderMode;
-                setProvider(next);
-                const ready = Boolean(runtime?.providerSupport[next]);
-                setError(ready ? null : `${providerLabel(next)} setup is incomplete.`);
-                setState(ready ? "ready" : "failed");
-              }}
-              disabled={isLive}
-            >
-              <option value="anam">Anam live session</option>
-              <option value="elevenlabs">ElevenLabs direct agent</option>
-              <option value="boson">Boson Higgs preview</option>
-            </select>
-          </label>
+        <div className="flex items-center gap-0.5">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Toggle transcript"
+            onClick={() => setShowTranscript((open) => !open)}
+          >
+            <MessageSquare className="size-5" />
+          </Button>
 
-          {provider === "elevenlabs" ? (
-            <label>
-              <span>Agent</span>
-              <input value={runtime?.elevenLabsAgent?.label ?? "ElevenLabs agent"} readOnly disabled />
-            </label>
-          ) : (
-            <label>
-            <span>{provider === "anam" ? "Persona" : "Live asset"}</span>
-            {provider === "anam" ? (
-              <select value={personaId} onChange={(event) => setPersonaId(event.target.value)} disabled={isLive}>
-                {(runtime?.personas ?? []).map((persona) => (
-                  <option key={persona.id} value={persona.id}>
-                    {persona.label}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <select value={bosonAvatarId} onChange={(event) => setBosonAvatarId(event.target.value)} disabled={isLive}>
-                {(runtime?.bosonAvatars ?? []).map((avatar) => (
-                  <option key={avatar.id} value={avatar.id}>
-                    {avatar.label}
-                  </option>
-                ))}
-              </select>
-            )}
-            </label>
-          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="Settings" disabled={isLive}>
+                <Settings className="size-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Mode</DropdownMenuLabel>
+              <DropdownMenuRadioGroup value={provider} onValueChange={handleProviderChange}>
+                <DropdownMenuRadioItem value="elevenlabs" disabled={!support.elevenlabs}>
+                  Voice
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="anam" disabled={!support.anam}>
+                  Avatar video
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="boson" disabled={!support.boson}>
+                  Preview clip
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
 
-          {provider === "boson" ? (
-            <label className="full-width">
-              <span>Prompt</span>
-              <input
-                value={bosonPrompt}
-                onChange={(event) => setBosonPrompt(event.target.value)}
-                disabled={isLive}
-                placeholder="Text to speak for comparison clip"
-              />
-            </label>
-          ) : null}
+              {provider === "anam" && personas.length > 0 ? (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Persona</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup value={personaId} onValueChange={setPersonaId}>
+                    {personas.map((persona) => (
+                      <DropdownMenuRadioItem key={persona.id} value={persona.id}>
+                        {persona.label}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </>
+              ) : null}
 
-          <div className="button-row">
-            <button type="button" onClick={startSession} disabled={!canStart}>
-              {provider === "boson" ? "Generate" : "Start"}
-            </button>
-            <button type="button" onClick={stopSession} disabled={!isLive}>
-              {provider === "boson" ? "Clear" : "Stop"}
-            </button>
+              {provider === "boson" && bosonAvatars.length > 0 ? (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Avatar asset</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup value={bosonAvatarId} onValueChange={setBosonAvatarId}>
+                    {bosonAvatars.map((avatar) => (
+                      <DropdownMenuRadioItem key={avatar.id} value={avatar.id}>
+                        {avatar.label}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <ModeToggle />
+        </div>
+      </header>
+
+      <section className="relative flex flex-1 items-center justify-center px-6 py-4" aria-label="Avatar stage">
+        {provider === "elevenlabs" ? (
+          <div className="relative aspect-square w-[min(72vmin,560px)]">
+            <Orb agentState={orbAgentState} className="size-full" />
           </div>
-        </div>
-
-        {error ? <p className="error">{error}</p> : null}
+        ) : provider === "anam" ? (
+          <div className="aspect-video w-full max-w-3xl overflow-hidden rounded-2xl border bg-muted shadow-sm">
+            <video id="avatar-video" autoPlay playsInline className="size-full object-cover" aria-label="Live avatar video" />
+          </div>
+        ) : (
+          <div className="aspect-square w-[min(72vmin,560px)] overflow-hidden rounded-2xl border bg-muted shadow-sm">
+            <video
+              src={bosonVideoSrc ?? undefined}
+              autoPlay
+              playsInline
+              controls
+              loop
+              className="size-full object-cover"
+              aria-label="Boson avatar video"
+            />
+          </div>
+        )}
       </section>
 
-      <aside className="side-panel" aria-label="Session transcript">
-        <section>
-          <h2>Conversation</h2>
-          <div className="transcript" aria-live="polite">
-            {messages.map((message) => (
-              <article key={message.id} data-role={message.role}>
-                <strong>{message.role}</strong>
-                <p>{message.content}</p>
-                {message.interrupted ? <small>interrupted</small> : null}
-              </article>
-            ))}
-          </div>
-        </section>
+      <footer className="flex flex-col items-center gap-3 px-6 pb-10 pt-2">
+        {provider === "boson" ? (
+          <input
+            value={bosonPrompt}
+            onChange={(event) => setBosonPrompt(event.target.value)}
+            disabled={isLive}
+            placeholder="Text to speak for the preview clip"
+            className="h-10 w-full max-w-md rounded-lg border bg-background px-3 text-sm shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
+        ) : null}
+
+        <div className="flex items-center gap-2">
+          {isLive ? (
+            <Button size="lg" variant="secondary" className="rounded-full px-8" onClick={stopSession}>
+              {provider === "boson" ? "Clear" : "Stop"}
+            </Button>
+          ) : (
+            <Button size="lg" className="rounded-full px-10" onClick={startSession} disabled={!canStart}>
+              {provider === "boson" ? "Generate" : "Start"}
+            </Button>
+          )}
+          {!isLive && provider === "boson" && state === "connected" ? (
+            <Button size="lg" variant="outline" className="rounded-full px-6" onClick={stopSession}>
+              Clear
+            </Button>
+          ) : null}
+        </div>
+
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      </footer>
+
+      <aside
+        aria-label="Session transcript"
+        className={cn(
+          "fixed inset-y-0 right-0 z-30 flex w-full max-w-sm flex-col border-l bg-card/95 shadow-xl backdrop-blur transition-transform duration-300 ease-out",
+          showTranscript ? "translate-x-0" : "translate-x-full",
+        )}
+      >
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <h2 className="text-sm font-medium">Conversation</h2>
+          <Button variant="ghost" size="icon" aria-label="Close transcript" onClick={() => setShowTranscript(false)}>
+            <X className="size-4" />
+          </Button>
+        </div>
+        <ScrollArea className="flex-1 px-4 py-3">
+          {messages.length === 0 ? (
+            <p className="px-1 py-8 text-center text-sm text-muted-foreground">
+              No messages yet. Start a session to begin.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-3" aria-live="polite">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={cn(
+                    "rounded-lg border px-3 py-2 text-sm",
+                    message.role === "persona" && "border-primary/30 bg-primary/5",
+                    message.role === "system" && "border-dashed bg-muted/40 text-muted-foreground",
+                  )}
+                >
+                  <span className="mb-1 block text-[0.65rem] font-medium uppercase tracking-wide text-muted-foreground">
+                    {message.role === "persona" ? displayLabel : message.role}
+                  </span>
+                  <p className="leading-relaxed">{message.content}</p>
+                  {message.interrupted ? (
+                    <span className="mt-1 block text-xs text-muted-foreground">interrupted</span>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
       </aside>
     </main>
   );
