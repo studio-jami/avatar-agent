@@ -5,14 +5,17 @@ Status: Active
 
 ## Run Locally
 
+Default run directory: `C:/Users/james/orgs/oss/apps/avatar`.
+For command details, use `docs/operations/commands.md`.
+
 1. Confirm `avatar/.env` exists and contains the provider fields from `docs/operations/account-configuration.md`.
 2. Confirm `ANAM_API_KEY`, `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`, and the named persona variables are populated.
 3. For Higgs preview testing, also confirm `BOSON_API_KEY` is populated.
-3. Run `pnpm install` from the repo root if dependencies are not installed.
-4. Run `pnpm dev`.
-5. Open `http://localhost:3638`.
-6. Choose `Anam live session` for realtime testing or `Boson Higgs preview` for generated clip testing.
-7. Start or generate from the console and watch status plus transcript/system events.
+4. Run `pnpm install` if dependencies are not installed.
+5. Run `pnpm dev`.
+6. Open `http://localhost:3638`.
+7. Choose `Anam live session` for realtime testing or `Boson Higgs preview` for generated clip testing.
+8. Start or generate from the console and watch status plus transcript/system events.
 
 ## Boson Higgs Preview Smoke Test
 

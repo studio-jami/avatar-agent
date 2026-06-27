@@ -3,9 +3,9 @@ import { getBosonVideoContent } from "../../../../lib/boson-video";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_request: Request, context: { params: { videoId: string } }) {
+export async function GET(_request: Request, context: { params: Promise<{ videoId: string }> }) {
   try {
-    const { videoId } = context.params;
+    const { videoId } = await context.params;
     const response = await getBosonVideoContent(videoId);
 
     return new Response(response.body, {
