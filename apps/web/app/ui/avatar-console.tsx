@@ -298,8 +298,6 @@ export function AvatarConsole() {
 
   const canStart = state === "ready" || state === "failed" || (provider === "boson" && state === "connected");
   const isLive = state === "connecting" || (provider === "anam" && state === "connected");
-  const anamEnabled = Boolean(runtime?.providerSupport.anam);
-  const bosonEnabled = Boolean(runtime?.providerSupport.boson);
 
   return (
     <main className="console-shell">
@@ -326,10 +324,10 @@ export function AvatarConsole() {
               }}
               disabled={isLive}
             >
-              <option value="anam" disabled={!anamEnabled}>
+              <option value="anam">
                 Anam live session
               </option>
-              <option value="boson" disabled={!bosonEnabled}>
+              <option value="boson">
                 Boson Higgs preview
               </option>
             </select>
