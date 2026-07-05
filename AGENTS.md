@@ -30,7 +30,7 @@ Follow `docs/standards/` for repo docs, reports, plans, and source-of-truth hand
 - Follow the shared dev-docs, planning, report, and source-truth standards from `docs/standards/`.
 - Research and feasibility reports live in `docs/research/`.
 - Durable decisions live in `docs/decisions/` after acceptance.
-- Add a `.changes/` fragment for production-meaningful docs, code, CI, security, operations, package, or public behavior changes.
+- Add a `.changelogs/` fragment for production-meaningful docs, code, CI, security, operations, package, or public behavior changes.
 - Keep fragments short and factual. Add aggregation only when release cadence needs it.
 
 ## Verification
