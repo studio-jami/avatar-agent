@@ -5,10 +5,9 @@ Next.js implementation of the accepted Avatar Agent working surface.
 ## Surface
 
 - Server-side ElevenLabs signed URL and Anam session token broker.
-- Boson Higgs video broker (create/status/content proxy) for free-preview quality checks.
 - Anam SDK video session client.
 - Start/stop controls, transcript stream, status, error, and provider trace UI.
-- Provider selector for Anam live vs Boson generated clip comparisons.
+- Provider selector for Anam avatar video vs ElevenLabs direct voice sessions.
 - Runtime readiness endpoint and safe telemetry event route.
 - Server-side forwarding for safe lifecycle events to configured PostHog and Amplitude accounts.
 

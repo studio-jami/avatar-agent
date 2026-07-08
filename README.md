@@ -17,7 +17,7 @@ portable across providers and products.
 - `docs/research/` - brainstorms, feasibility reports, and source research.
 - `docs/decisions/` - durable decision records once choices are accepted.
 - `docs/standards/` - local Jami Studio standards for this repo.
-- `.changes/` - changelog fragments for production-meaningful changes.
+- `.changelogs/` - changelog fragments for production-meaningful changes.
 - `assets/avatars/` - curated public avatar assets only. Do not commit staging media or private assets.
 
 ## Run Commands
@@ -38,8 +38,7 @@ Use `docs/operations/commands.md` as the single run/build/verify command referen
 ## Current Status
 
 The initial feasibility recommendation is accepted: build the complete greenfield Anam SDK +
-server-side ElevenLabs working surface, then extend it with Boson Higgs preview generation for
-side-by-side quality evaluation using shared avatar assets. Provider keys remain server-side,
+server-side ElevenLabs working surface. Provider keys remain server-side,
 telemetry stays configuration-driven, and the access layer remains behind clean boundaries for
 later full-account workflows.
 

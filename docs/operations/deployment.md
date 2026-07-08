@@ -22,7 +22,6 @@ Required for live avatar sessions:
 
 - `ANAM_API_KEY`
 - `ANAM_AVATAR_ID`
-- `AVATAR_PERSONA_KEYS` and any named persona variables used by that list
 - `ELEVENLABS_API_KEY`
 - `ELEVENLABS_AGENT_ID`
 - `ELEVENLABS_AGENT_NAME` (optional display label)
