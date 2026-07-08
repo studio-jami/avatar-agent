@@ -104,31 +104,16 @@ export async function createAvatarSession(input: SessionRequestInput): Promise<A
     elevenLabsAgentSettings.dynamicVariables = dynamicVariables;
   }
 
-  const primaryPersonaConfig = persona.personaId
-    ? { personaId: persona.personaId }
-    : { avatarId: persona.avatarId };
-
-  if (!primaryPersonaConfig.personaId && !primaryPersonaConfig.avatarId) {
-    throw new Error("Missing persona configuration for Anam session token");
+  if (!persona.avatarId) {
+    throw new Error("Missing ANAM_AVATAR_ID for Anam session token");
   }
 
-  let anamResponse = await requestAnamSessionToken(config.anamApiKey, {
-    personaConfig: primaryPersonaConfig,
+  const anamResponse = await requestAnamSessionToken(config.anamApiKey, {
+    personaConfig: { avatarId: persona.avatarId },
     environment: {
       elevenLabsAgentSettings,
     },
   });
-
-  // Some existing deployments stored persona IDs in the named vars before this repo normalized semantics.
-  // If personaId fails validation, retry once as avatarId for backward compatibility.
-  if (!anamResponse.ok && anamResponse.status === 400 && persona.personaId) {
-    anamResponse = await requestAnamSessionToken(config.anamApiKey, {
-      personaConfig: { avatarId: persona.personaId },
-      environment: {
-        elevenLabsAgentSettings,
-      },
-    });
-  }
 
   if (!anamResponse.ok) {
     throw new Error(`Anam session token request failed (${anamResponse.status}): ${await readProviderError(anamResponse)}`);

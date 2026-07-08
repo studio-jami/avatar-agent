@@ -15,7 +15,7 @@ Optional display metadata:
 The direct agent surface uses the server-side `/api/elevenlabs-session` route to exchange
 `ELEVENLABS_API_KEY` plus `ELEVENLABS_AGENT_ID` for a short-lived conversation token, then starts
 the browser SDK with WebRTC. For the current deployment lane, set `ELEVENLABS_AGENT_ID` in local
-and host secret storage to the agent ID supplied for `My Agent`; do not commit the ID.
+and host secret storage to the current ElevenLabs agent ID; do not commit the ID.
 
 ## Required For Anam Live Surface
 
@@ -24,22 +24,18 @@ and host secret storage to the agent ID supplied for `My Agent`; do not commit t
 - `ELEVENLABS_API_KEY`
 - `ELEVENLABS_AGENT_ID`
 
-## Required For Boson Higgs Preview
+The Anam live surface uses the server-side ElevenLabs agent integration. `ANAM_AVATAR_ID` must be
+an Anam avatar ID for the Anam account that owns `ANAM_API_KEY`; do not put a stateful Anam
+persona ID in this field.
 
-- `BOSON_API_KEY`
+Optional display metadata:
 
-Optional tuning:
+- `AVATAR_PERSONA_NAME` (defaults to `Jami Studio`)
+- `ELEVENLABS_VOICE_ID` (kept for account traceability; not required by the current broker)
 
-- `BOSON_TTS_MODEL` (defaults to `higgs-tts-3`)
-- `BOSON_VIDEO_SIZE` (`640x640` | `640x480` | `480x640`, defaults to `640x640`)
-
-Boson preview reads avatar still images from `assets/avatars/live` and exposes those as selectable
-comparison assets in the console.
-
-Named persona IDs can be configured with `AVATAR_PERSONA_KEYS` plus matching variables. For
-example, `AVATAR_PERSONA_KEYS=MEGAN,SARAH,ALEXIS` tells the server to read `MEGAN`, `SARAH`,
-and `ALEXIS` as Anam avatar/persona IDs and expose only friendly labels to the browser. The
-server reuses `ELEVENLABS_AGENT_ID` unless a persona-specific `<KEY>_ELEVENLABS_AGENT_ID` is set.
+Advanced multi-avatar deployments can use `AVATAR_AGENT_PRESETS` as a JSON array of objects with
+`id`, `label`, `avatarId`, and `agentId`. Keep the simple `ANAM_AVATAR_ID` path as the default
+unless production needs multiple selectable avatars.
 
 The runtime also accepts upstream `ELEVEN_LABS_API_KEY` when projecting shared account values
 from `../oss/.env`, but deployment secrets should prefer the app-local `ELEVENLABS_API_KEY` name.

@@ -9,21 +9,12 @@ Default run directory: `C:/Users/james/orgs/oss/apps/avatar`.
 For command details, use `docs/operations/commands.md`.
 
 1. Confirm `avatar/.env` exists and contains the provider fields from `docs/operations/account-configuration.md`.
-2. Confirm `ANAM_API_KEY`, `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`, and the named persona variables are populated.
-3. For Higgs preview testing, also confirm `BOSON_API_KEY` is populated.
-4. Run `pnpm install` if dependencies are not installed.
-5. Run `pnpm dev`.
-6. Open `http://localhost:3638`.
-7. Choose `Anam live session` for realtime testing or `Boson Higgs preview` for generated clip testing.
-8. Start or generate from the console and watch status plus transcript/system events.
-
-## Boson Higgs Preview Smoke Test
-
-1. Open the app and switch provider to `Boson Higgs preview`.
-2. Pick an avatar from `assets/avatars/live`.
-3. Enter a short prompt and select Generate.
-4. Wait for status polling to complete and confirm the returned clip renders in the stage player.
-5. Repeat with the same prompt on `Anam live session` for quality comparison.
+2. Confirm `ANAM_API_KEY`, `ANAM_AVATAR_ID`, `ELEVENLABS_API_KEY`, and `ELEVENLABS_AGENT_ID` are populated.
+3. Run `pnpm install` if dependencies are not installed.
+4. Run `pnpm dev`.
+5. Open `http://localhost:3638`.
+6. Choose `Avatar video` for realtime testing or `Voice` for direct ElevenLabs testing.
+7. Start from the console and watch status plus transcript/system events.
 
 ## Refresh Local Shared Credentials
 
@@ -39,7 +30,7 @@ Symptom: the console shows provider readiness is incomplete or `/api/anam-sessio
 Action:
 
 1. Add `ANAM_API_KEY` to local or deployment secrets.
-2. Confirm at least one configured persona ID is present.
+2. Confirm `ANAM_AVATAR_ID` is present and belongs to the same Anam account as `ANAM_API_KEY`.
 3. Restart the dev server or redeploy so the server process reads the new environment.
 4. Retry the session start.
 
@@ -65,17 +56,6 @@ Action:
 2. Confirm `ELEVENLABS_AGENT_ID` points to an active Conversational AI agent with credits available.
 3. Confirm the account has access to Conversational AI signed URLs.
 4. Retry from the console and check provider trace IDs in the UI.
-
-## Boson Generation Failure
-
-Symptom: `/api/boson-video` or `/api/boson-video/{videoId}` returns provider errors.
-
-Action:
-
-1. Confirm `BOSON_API_KEY` is valid for the free preview account.
-2. Confirm `assets/avatars/live` contains at least one PNG, JPG, or WEBP file.
-3. Keep prompts short and plain while preview limits are active.
-4. Retry generation and confirm polling reaches `completed` before requesting content.
 
 ## Telemetry Check
 

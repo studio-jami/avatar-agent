@@ -28,21 +28,18 @@ const Orb = dynamic(() => import("@/components/ui/orb").then((mod) => mod.Orb), 
 });
 
 type ConnectionState = "idle" | "checking" | "ready" | "connecting" | "connected" | "failed";
-type ProviderMode = "anam" | "elevenlabs" | "boson";
+type ProviderMode = "anam" | "elevenlabs";
 
 type RuntimeConfig = {
   providerReady: boolean;
   providerSupport: {
     anam: boolean;
     elevenlabs: boolean;
-    boson: boolean;
   };
   defaultProvider: ProviderMode | null;
   personas: Array<{ id: string; label: string }>;
   defaultPersonaId?: string;
   elevenLabsAgent?: { label: string };
-  bosonAvatars: Array<{ id: string; label: string; fileName: string }>;
-  defaultBosonAvatarId?: string;
 };
 
 type TranscriptMessage = {
@@ -62,20 +59,6 @@ type ElevenLabsSessionResponse = {
   conversationToken?: string;
   agent?: { label: string };
   error?: string;
-};
-
-type BosonCreateResponse = {
-  videoId?: string;
-  status?: string;
-  progress?: number;
-  error?: string;
-};
-
-type BosonStatusResponse = {
-  videoId?: string;
-  status?: string;
-  progress?: number;
-  error?: unknown;
 };
 
 type AnamClientLike = {
@@ -128,10 +111,6 @@ function buildAccessStreamClientTools(
       },
     ]),
   );
-}
-
-function wait(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function addAnamListener(client: AnamClientLike, eventName: string, listener: (event: Record<string, unknown>) => void) {
@@ -234,23 +213,15 @@ function providerLabel(provider: ProviderMode): string {
     return "Anam live session";
   }
 
-  if (provider === "elevenlabs") {
-    return "ElevenLabs direct agent";
-  }
-
-  return "Boson Higgs preview";
+  return "ElevenLabs direct agent";
 }
 
 function AvatarConsoleContent() {
   const clientRef = useRef<AnamClientLike | null>(null);
-  const bosonPollRef = useRef(0);
   const [state, setState] = useState<ConnectionState>("checking");
   const [runtime, setRuntime] = useState<RuntimeConfig | null>(null);
   const [provider, setProvider] = useState<ProviderMode>("anam");
   const [personaId, setPersonaId] = useState("");
-  const [bosonAvatarId, setBosonAvatarId] = useState("");
-  const [bosonPrompt, setBosonPrompt] = useState("Give a short intro as the Jami Studio avatar.");
-  const [bosonVideoSrc, setBosonVideoSrc] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<TranscriptMessage[]>([]);
   const [showTranscript, setShowTranscript] = useState(false);
@@ -317,7 +288,6 @@ function AvatarConsoleContent() {
         setRuntime(config);
         setProvider(config.defaultProvider ?? "anam");
         setPersonaId(config.defaultPersonaId ?? config.personas[0]?.id ?? "");
-        setBosonAvatarId(config.defaultBosonAvatarId ?? config.bosonAvatars[0]?.id ?? "");
         setState(config.providerReady ? "ready" : "failed");
         if (!config.providerReady) {
           setError("Provider setup is incomplete.");
@@ -341,11 +311,6 @@ function AvatarConsoleContent() {
   }
 
   async function startSession() {
-    if (provider === "boson") {
-      await startBosonVideo();
-      return;
-    }
-
     if (provider === "elevenlabs") {
       await startElevenLabsConversation();
       return;
@@ -353,7 +318,6 @@ function AvatarConsoleContent() {
 
     setState("connecting");
     setError(null);
-    setBosonVideoSrc(null);
     telemetry("avatar.session.start_requested", { provider: "anam" });
 
     try {
@@ -405,7 +369,6 @@ function AvatarConsoleContent() {
   async function startElevenLabsConversation() {
     setState("connecting");
     setError(null);
-    setBosonVideoSrc(null);
     telemetry("avatar.session.start_requested", { provider: "elevenlabs" });
 
     try {
@@ -436,68 +399,7 @@ function AvatarConsoleContent() {
     }
   }
 
-  async function startBosonVideo() {
-    setState("connecting");
-    setError(null);
-    const runId = Date.now();
-    bosonPollRef.current = runId;
-    telemetry("avatar.session.start_requested", { provider: "boson" });
-
-    try {
-      const createResponse = await fetch("/api/boson-video", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          avatarId: bosonAvatarId || undefined,
-          prompt: bosonPrompt,
-        }),
-      });
-
-      const created = (await createResponse.json()) as BosonCreateResponse;
-      if (!createResponse.ok || !created.videoId) {
-        throw new Error(created.error ?? "Boson generation request failed.");
-      }
-
-      addSystemMessage(`Boson video requested (${created.videoId}).`);
-
-      while (bosonPollRef.current === runId) {
-        const statusResponse = await fetch(`/api/boson-video/${created.videoId}`, { cache: "no-store" });
-        const statusPayload = (await statusResponse.json()) as BosonStatusResponse;
-        if (!statusResponse.ok || !statusPayload.status) {
-          throw new Error(typeof statusPayload.error === "string" ? statusPayload.error : "Boson status poll failed.");
-        }
-
-        if (statusPayload.status === "completed") {
-          const contentUrl = `/api/boson-video/${created.videoId}/content?ts=${Date.now()}`;
-          setBosonVideoSrc(contentUrl);
-          setState("connected");
-          telemetry("avatar.session.connected", { provider: "boson" });
-          addSystemMessage(`Boson video completed (${created.videoId}).`);
-          return;
-        }
-
-        if (statusPayload.status === "failed") {
-          throw new Error(typeof statusPayload.error === "string" ? statusPayload.error : "Boson video generation failed.");
-        }
-
-        await wait(2000);
-      }
-    } catch (sessionError) {
-      setState("failed");
-      setError(sessionError instanceof Error ? sessionError.message : "Unable to generate Boson video.");
-      telemetry("avatar.session.start_failed", { provider: "boson" });
-    }
-  }
-
   async function stopSession() {
-    if (provider === "boson") {
-      bosonPollRef.current = 0;
-      setBosonVideoSrc(null);
-      setState(runtime?.providerReady ? "ready" : "idle");
-      telemetry("avatar.session.stop_requested", { provider: "boson" });
-      return;
-    }
-
     if (provider === "elevenlabs") {
       elevenLabsConversation.endSession();
       setState(runtime?.providerReady ? "ready" : "idle");
@@ -511,16 +413,14 @@ function AvatarConsoleContent() {
     telemetry("avatar.session.stop_requested", { provider: "anam" });
   }
 
-  const canStart = (providerIsReady(provider) && (state === "ready" || state === "failed")) || (provider === "boson" && state === "connected");
+  const canStart = providerIsReady(provider) && (state === "ready" || state === "failed");
   const isLive = state === "connecting" || ((provider === "anam" || provider === "elevenlabs") && state === "connected");
 
-  const support = runtime?.providerSupport ?? { anam: false, elevenlabs: false, boson: false };
+  const support = runtime?.providerSupport ?? { anam: false, elevenlabs: false };
   const personas = runtime?.personas ?? [];
-  const bosonAvatars = runtime?.bosonAvatars ?? [];
   const agentLabel = runtime?.elevenLabsAgent?.label ?? "Avatar";
   const activePersona = personas.find((persona) => persona.id === personaId);
-  const displayLabel =
-    provider === "elevenlabs" ? agentLabel : provider === "anam" ? activePersona?.label ?? "Avatar" : "Preview clip";
+  const displayLabel = provider === "elevenlabs" ? agentLabel : activePersona?.label ?? "Avatar";
 
   const statusLabel = !support[provider]
     ? "Needs setup"
@@ -590,9 +490,6 @@ function AvatarConsoleContent() {
                 <DropdownMenuRadioItem value="anam" disabled={!support.anam}>
                   Avatar video
                 </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="boson" disabled={!support.boson}>
-                  Preview clip
-                </DropdownMenuRadioItem>
               </DropdownMenuRadioGroup>
 
               {provider === "anam" && personas.length > 0 ? (
@@ -609,19 +506,6 @@ function AvatarConsoleContent() {
                 </>
               ) : null}
 
-              {provider === "boson" && bosonAvatars.length > 0 ? (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel>Avatar asset</DropdownMenuLabel>
-                  <DropdownMenuRadioGroup value={bosonAvatarId} onValueChange={setBosonAvatarId}>
-                    {bosonAvatars.map((avatar) => (
-                      <DropdownMenuRadioItem key={avatar.id} value={avatar.id}>
-                        {avatar.label}
-                      </DropdownMenuRadioItem>
-                    ))}
-                  </DropdownMenuRadioGroup>
-                </>
-              ) : null}
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -634,51 +518,24 @@ function AvatarConsoleContent() {
           <div className="relative aspect-square w-[min(72vmin,560px)]">
             <Orb agentState={orbAgentState} className="size-full" />
           </div>
-        ) : provider === "anam" ? (
+        ) : (
           <div className="aspect-video w-full max-w-3xl overflow-hidden rounded-2xl border bg-muted shadow-sm">
             <video id="avatar-video" autoPlay playsInline className="size-full object-cover" aria-label="Live avatar video" />
-          </div>
-        ) : (
-          <div className="aspect-square w-[min(72vmin,560px)] overflow-hidden rounded-2xl border bg-muted shadow-sm">
-            <video
-              src={bosonVideoSrc ?? undefined}
-              autoPlay
-              playsInline
-              controls
-              loop
-              className="size-full object-cover"
-              aria-label="Boson avatar video"
-            />
           </div>
         )}
       </section>
 
       <footer className="flex flex-col items-center gap-3 px-6 pb-10 pt-2">
-        {provider === "boson" ? (
-          <input
-            value={bosonPrompt}
-            onChange={(event) => setBosonPrompt(event.target.value)}
-            disabled={isLive}
-            placeholder="Text to speak for the preview clip"
-            className="h-10 w-full max-w-md rounded-lg border bg-background px-3 text-sm shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          />
-        ) : null}
-
         <div className="flex items-center gap-2">
           {isLive ? (
             <Button size="lg" variant="secondary" className="rounded-full px-8" onClick={stopSession}>
-              {provider === "boson" ? "Clear" : "Stop"}
+              Stop
             </Button>
           ) : (
             <Button size="lg" className="rounded-full px-10" onClick={startSession} disabled={!canStart}>
-              {provider === "boson" ? "Generate" : "Start"}
+              Start
             </Button>
           )}
-          {!isLive && provider === "boson" && state === "connected" ? (
-            <Button size="lg" variant="outline" className="rounded-full px-6" onClick={stopSession}>
-              Clear
-            </Button>
-          ) : null}
         </div>
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
