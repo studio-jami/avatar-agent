@@ -20,13 +20,12 @@ and host secret storage to the current ElevenLabs agent ID; do not commit the ID
 ## Required For Anam Live Surface
 
 - `ANAM_API_KEY`
-- `ANAM_AVATAR_ID`
+- `ANAM_PERSONA_ID`
 - `ELEVENLABS_API_KEY`
 - `ELEVENLABS_AGENT_ID`
 
-The Anam live surface uses the server-side ElevenLabs agent integration. `ANAM_AVATAR_ID` must be
-an Anam avatar ID for the Anam account that owns `ANAM_API_KEY`; do not put a stateful Anam
-persona ID in this field.
+The Anam live surface uses the server-side ElevenLabs agent integration. `ANAM_PERSONA_ID` is the
+persona ID shown in the Anam dashboard and must belong to the same Anam account as `ANAM_API_KEY`.
 
 Optional display metadata:
 
@@ -34,7 +33,7 @@ Optional display metadata:
 - `ELEVENLABS_VOICE_ID` (kept for account traceability; not required by the current broker)
 
 Advanced multi-avatar deployments can use `AVATAR_AGENT_PRESETS` as a JSON array of objects with
-`id`, `label`, `avatarId`, and `agentId`. Keep the simple `ANAM_AVATAR_ID` path as the default
+`id`, `label`, `personaId`, and `agentId`. Keep the simple `ANAM_PERSONA_ID` path as the default
 unless production needs multiple selectable avatars.
 
 The runtime also accepts upstream `ELEVEN_LABS_API_KEY` when projecting shared account values

@@ -104,12 +104,12 @@ export async function createAvatarSession(input: SessionRequestInput): Promise<A
     elevenLabsAgentSettings.dynamicVariables = dynamicVariables;
   }
 
-  if (!persona.avatarId) {
-    throw new Error("Missing ANAM_AVATAR_ID for Anam session token");
+  if (!persona.personaId) {
+    throw new Error("Missing ANAM_PERSONA_ID for Anam session token");
   }
 
   const anamResponse = await requestAnamSessionToken(config.anamApiKey, {
-    personaConfig: { avatarId: persona.avatarId },
+    personaConfig: { personaId: persona.personaId },
     environment: {
       elevenLabsAgentSettings,
     },

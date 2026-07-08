@@ -21,7 +21,7 @@ Use the app-local names from `.env.example` in Vercel. Do not import the full up
 Required for live avatar sessions:
 
 - `ANAM_API_KEY`
-- `ANAM_AVATAR_ID`
+- `ANAM_PERSONA_ID`
 - `ELEVENLABS_API_KEY`
 - `ELEVENLABS_AGENT_ID`
 - `ELEVENLABS_AGENT_NAME` (optional display label)
