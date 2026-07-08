@@ -12,7 +12,7 @@ Avatar Agent keeps account credentials outside the public repository and uses se
 3. The browser posts the selected public avatar persona key to `/api/anam-session`.
 4. The server reads provider credentials and private provider IDs from local or host environment variables.
 5. The server asks ElevenLabs for a short-lived Conversational AI signed URL.
-6. The server asks Anam for a short-lived session token using the avatar ID and ElevenLabs agent settings.
+6. The server asks Anam for a short-lived session token using the Anam persona ID and ElevenLabs agent settings.
 7. The browser receives only the Anam session token, selected IDs, and non-secret provider trace IDs.
 8. The browser streams the avatar session through the Anam SDK.
 9. Client and server lifecycle events post to `/api/telemetry`, which forwards safe events to configured analytics accounts.

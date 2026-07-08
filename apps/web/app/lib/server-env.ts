@@ -14,7 +14,7 @@ type ElevenLabsConfig = {
 type ProviderPersona = {
   id: string;
   label: string;
-  avatarId?: string;
+  personaId?: string;
   agentId: string;
   voiceId?: string;
 };
@@ -74,7 +74,7 @@ function uniquePersonas(personas: ProviderPersona[]): ProviderPersona[] {
   const unique: ProviderPersona[] = [];
 
   for (const persona of personas) {
-    const fingerprint = `${persona.avatarId ?? ""}::${persona.agentId}`;
+    const fingerprint = `${persona.personaId ?? ""}::${persona.agentId}`;
     if (!seen.has(fingerprint)) {
       seen.add(fingerprint);
       unique.push(persona);
@@ -98,16 +98,16 @@ function readPersonaPresets(): ProviderPersona[] {
       }
 
       const preset = entry as Record<string, unknown>;
-      const avatarId = typeof preset.avatarId === "string" ? preset.avatarId.trim() : "";
+      const personaId = typeof preset.personaId === "string" ? preset.personaId.trim() : "";
       const agentId = typeof preset.agentId === "string" ? preset.agentId.trim() : "";
-      if (!avatarId || !agentId) {
+      if (!personaId || !agentId) {
         return [];
       }
 
       const label = typeof preset.label === "string" && preset.label.trim() ? preset.label.trim() : `Persona ${index + 1}`;
       const id = typeof preset.id === "string" && preset.id.trim() ? safeId(preset.id) : safeId(label);
       const voiceId = typeof preset.voiceId === "string" && preset.voiceId.trim() ? preset.voiceId.trim() : undefined;
-      return [{ id, label, avatarId, agentId, voiceId }];
+      return [{ id, label, personaId, agentId, voiceId }];
     }));
   }
 
@@ -116,8 +116,8 @@ function readPersonaPresets(): ProviderPersona[] {
     return [];
   }
 
-  const avatarId = readEnv("ANAM_AVATAR_ID");
-  if (!avatarId) {
+  const personaId = readEnv("ANAM_PERSONA_ID");
+  if (!personaId) {
     return [];
   }
 
@@ -126,7 +126,7 @@ function readPersonaPresets(): ProviderPersona[] {
     {
       id: "default",
       label,
-      avatarId,
+      personaId,
       agentId,
       voiceId: readEnv("ELEVENLABS_VOICE_ID"),
     },
