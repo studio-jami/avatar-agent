@@ -3,6 +3,14 @@
 Avatar Agent is the public Jami Studio repo for the realtime avatar interaction layer.
 Keep the repo simple, modular, public-safe, and provider-adaptable.
 
+## Code search
+
+You are operating in an environment where ast-grep is installed. For any code
+search that requires understanding of syntax or code structure, default to
+`ast-grep --lang <language> -p '<pattern>'`, adjusting `--lang` for the target
+language. Avoid text-only search tools unless a plain-text search is
+explicitly requested.
+
 ## Source Of Truth
 
 1. Live code, configuration, and generated artifacts once they exist.
